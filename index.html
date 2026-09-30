@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ms"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f766e">
+<title>ACD Rabies</title>
+<style>
+:root{--p:#0f766e;--p2:#14b8a6;--bg:#f1f5f4;--card:#fff;--tx:#0f172a;--mu:#64748b;--bd:#dbe4e2;--err:#dc2626}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--tx);padding-bottom:env(safe-area-inset-bottom)}
+header{background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;padding:calc(18px + env(safe-area-inset-top)) 18px 22px;position:sticky;top:0;z-index:5}
+header h1{margin:0;font-size:1.15rem}header p{margin:2px 0 0;font-size:.8rem;opacity:.9}
+main{max-width:640px;margin:0 auto;padding:14px}
+.card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 2px 10px #0000000d;animation:up .3s ease}
+@keyframes up{from{opacity:0;transform:translateY(8px)}}
+h2{font-size:.95rem;margin:0 0 12px;color:var(--p)}
+label{display:block;font-size:.82rem;font-weight:600;margin:12px 0 5px}
+input,select,textarea{width:100%;font:inherit;padding:12px;border:1.5px solid var(--bd);border-radius:12px;background:#fff;color:var(--tx)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--p2);box-shadow:0 0 0 3px #14b8a633}
+.bad{border-color:var(--err)!important}.hint{font-size:.75rem;color:var(--mu);margin-top:4px}
+.seg{display:flex;gap:8px;flex-wrap:wrap}.seg input{display:none}
+.seg span{display:block;padding:10px 14px;border:1.5px solid var(--bd);border-radius:999px;font-size:.85rem;cursor:pointer;user-select:none}
+.seg input:checked+span{background:var(--p);border-color:var(--p);color:#fff}
+button.b{width:100%;padding:14px;border:0;border-radius:12px;background:var(--p);color:#fff;font:600 1rem inherit;margin-top:16px}
+button.b:active{transform:scale(.98)}button.l{background:none;border:0;color:var(--p);font:inherit;padding:8px;margin-top:6px;width:100%}
+.ro{background:#ecfdf5;border-radius:12px;padding:12px;font-size:.85rem;line-height:1.5}
+.hide{display:none!important}
+#ov{position:fixed;inset:0;background:#0f172acc;backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:#fff;z-index:99}
+#ov.on{display:flex}.sp{width:46px;height:46px;border:4px solid #ffffff44;border-top-color:#fff;border-radius:50%;animation:r .8s linear infinite}@keyframes r{to{transform:rotate(360deg)}}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#0f172a;color:#fff;padding:12px 18px;border-radius:12px;font-size:.88rem;z-index:100;opacity:0;pointer-events:none;transition:.3s;max-width:90%}
+#toast.on{opacity:1}
+.sk{height:44px;border-radius:12px;background:linear-gradient(90deg,#e5ecea 25%,#f3f7f6 50%,#e5ecea 75%);background-size:200% 100%;animation:sh 1.2s infinite}@keyframes sh{to{background-position:-200% 0}}
+</style></head><body>
+<header><h1>🐕 Active Case Detection (ACD) Rabies</h1><p id="sub">Borang pegawai</p></header>
+<main id="app"></main>
+<div id="ov"><div class="sp"></div><div id="ovt">Sila tunggu…</div></div>
+<div id="toast"></div>
+<script>
+const API='https://script.google.com/macros/library/d/1klhpVI4aDnruHnIKG5bJybq3PlGyKCPbbZRyz1TYeIRIs1ET_BFjPFii/1';
+const $=s=>document.querySelector(s),app=$('#app');
+let L={jawatan:[],tempat:[],pkd:[],lokaliti:[]},me=JSON.parse(localStorage.getItem('acd_user')||'null'),gps=null;
+const today=()=>{const d=new Date();return[String(d.getDate()).padStart(2,'0'),String(d.getMonth()+1).padStart(2,'0'),d.getFullYear()].join('/')};
+const load=(on,t)=>{$('#ov').classList.toggle('on',on);if(t)$('#ovt').textContent=t};
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),3200)}
+async function call(body,msg){load(true,msg);try{const r=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(body)});return await r.json()}catch(e){toast('Ralat rangkaian. Cuba lagi.');return{ok:false}}finally{load(false)}}
+const opts=(a,ph)=>`<option value="">${ph||'-- Pilih --'}</option>`+a.map(v=>`<option>${v}</option>`).join('')+'<option value="__new">➕ Tambah baharu…</option>';
+const seg=(n,a,t='radio')=>`<div class="seg">${a.map(v=>`<label style="margin:0"><input type="${t}" name="${n}" value="${v}"><span>${v}</span></label>`).join('')}</div>`;
+const val=n=>(document.querySelector(`[name=${n}]:checked`)||{}).value||'';
+function bindNew(){document.querySelectorAll('select[data-new]').forEach(s=>s.onchange=()=>{if(s.value==='__new'){const v=(prompt('Masukkan nama baharu:')||'').trim().toUpperCase();if(v){s.insertAdjacentHTML('afterbegin',`<option>${v}</option>`);s.value=v}else s.value=''}})}
+function phoneFix(el){el.value=el.value.replace(/\D/g,'');if(!el.value.startsWith('01'))el.value='01'+el.value.replace(/^0?1?/,'')}
+function icFix(el){el.value=el.value.replace(/\D/g,'').slice(0,12)}
+function getGPS(){return new Promise(r=>navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>r({lat:p.coords.latitude.toFixed(7),lng:p.coords.longitude.toFixed(7),t:new Date().toLocaleString('en-GB')}),()=>r(null),{enableHighAccuracy:true,timeout:12000}):r(null))}
+function need(ids){let ok=true;ids.forEach(i=>{const e=document.getElementById(i);const bad=!e.value.trim();e.classList.toggle('bad',bad);if(bad)ok=false});if(!ok)toast('Sila lengkapkan ruangan bertanda merah');return ok}
+
+async function init(){
+  app.innerHTML='<div class="card"><div class="sk"></div><br><div class="sk"></div><br><div class="sk"></div></div>';
+  try{const r=await(await fetch(API)).json();L=r.lists}catch(e){toast('Tidak dapat memuatkan senarai')}
+  me?form():loginView();
+}
+function loginView(){
+  $('#sub').textContent='Log masuk';
+  app.innerHTML=`<div class="card"><h2>Log masuk pegawai</h2><label>No. Kad Pengenalan</label><input id="lic" inputmode="numeric" placeholder="cth: 900101025555" oninput="icFix(this)"><button class="b" id="bl">Log masuk</button><button class="l" id="bs">Pengguna baharu? Daftar</button></div>`;
+  $('#bl').onclick=async()=>{if(!need(['lic']))return;const r=await call({action:'login',ic:$('#lic').value},'Menyemak…');
+    if(r.ok){me=r.user;localStorage.setItem('acd_user',JSON.stringify(me));form()}else toast(r.notFound?'IC tidak dijumpai. Sila daftar.':'Ralat')};
+  $('#bs').onclick=signupView;
+}
+function signupView(){
+  $('#sub').textContent='Pendaftaran pengguna baharu';
+  app.innerHTML=`<div class="card"><h2>Daftar pegawai</h2>
+  <label>Nama (HURUF BESAR)</label><input id="sn" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()" autocomplete="name">
+  <label>No. Kad Pengenalan</label><input id="si" inputmode="numeric" oninput="icFix(this)" placeholder="12 digit, tanpa '-'"><div class="hint">Sifar di hadapan dikekalkan</div>
+  <label>No. Telefon</label><input id="st" inputmode="tel" value="01" oninput="phoneFix(this)">
+  <label>Jawatan</label><select id="sj" data-new>${opts(L.jawatan)}</select>
+  <label>Tempat Bertugas</label><select id="sp" data-new>${opts(L.tempat)}</select>
+  <label>PKD</label><select id="sk" data-new>${opts(L.pkd)}</select>
+  <div class="hint" style="margin-top:12px">Kebenaran lokasi dan kamera akan diminta (kamera untuk kegunaan akan datang sahaja).</div>
+  <button class="b" id="ss">Daftar &amp; Mula</button><button class="l" id="bb">Kembali</button></div>`;
+  bindNew();$('#bb').onclick=loginView;
+  $('#ss').onclick=async()=>{if(!need(['sn','si','st','sj','sp','sk']))return;
+    if($('#si').value.length!==12){$('#si').classList.add('bad');return toast('IC mesti 12 digit')}
+    load(true,'Meminta kebenaran lokasi & kamera…');
+    gps=await getGPS();
+    try{const s=await navigator.mediaDevices.getUserMedia({video:true});s.getTracks().forEach(t=>t.stop())}catch(e){}
+    const u={nama:$('#sn').value.trim(),ic:$('#si').value,tel:$('#st').value,jawatan:$('#sj').value,tempat:$('#sp').value,pkd:$('#sk').value,lat:gps&&gps.lat,lng:gps&&gps.lng};
+    const r=await call({action:'signup',user:u},'Mendaftar…');
+    if(r.ok){me=r.user;localStorage.setItem('acd_user',JSON.stringify(me));toast('Pendaftaran berjaya');form()}else toast(r.error||'Gagal daftar')};
+}
+function form(){
+  $('#sub').textContent='Borang ACD';
+  const ynt=n=>seg(n,['Ya','Tidak']);
+  app.innerHTML=`<div class="card"><h2>Pegawai pelapor</h2><div class="ro"><b>${me.nama}</b><br>${me.jawatan} · ${me.tel}<br>Tarikh ACD: ${today()}</div><button class="l" id="lo">Bukan anda? Log keluar</button></div>
+  <div class="card"><h2>Maklumat penghuni</h2>
+  <label>Lokaliti</label><select id="lok" data-new>${opts(L.lokaliti)}</select>
+  <label>Nama penuh penghuni</label><input id="nm" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+  <label>No. Kad Pengenalan</label><input id="ic" inputmode="numeric" oninput="icFix(this)">
+  <label>No. Telefon</label><input id="tl" inputmode="tel" value="01" oninput="phoneFix(this)">
+  <label>Alamat</label><textarea id="al" rows="2"></textarea>
+  <label>Jumlah isi rumah (nombor sahaja)</label><input id="ir" type="number" inputmode="numeric" min="1"></div>
+  <div class="card"><h2>Haiwan peliharaan</h2>
+  <label>Ada bela haiwan peliharaan? (jika ya, nyatakan)</label><input id="be" placeholder="cth: 2 ekor kucing">
+  <label>Terima vaksin rabies untuk haiwan peliharaan?</label>${seg('vk',['Ya','Tidak','Tiada haiwan'])}
+  <label>Pernah melihat bangkai atau haiwan berkelakuan tidak normal (kawasan berdekatan)?</label>${ynt('bk')}
+  <label>Pernah digigit haiwan dalam masa 3 bulan sebelum?</label>${ynt('gg')}</div>
+  <div class="card hide" id="bite"><h2>Butiran gigitan</h2>
+  <label>Jenis haiwan</label>${seg('jn',['Haiwan peliharaan','Haiwan liar'])}
+  <label>Nama individu yang digigit</label><input id="ng">
+  <label>Tarikh digigit</label><input id="tg" type="date">
+  <label>Anggota badan yang digigit</label><input id="ab">
+  <label>Bilangan dos suntikan vaksin PEP</label>${seg('ds',['Tidak menerima suntikan','1','2','3'])}
+  <label>Status haiwan</label>${seg('sh',['Vaksin','Tidak divaksin','Tidak diketahui'])}
+  <label>Status PEP</label>${seg('sp2',['Diberi','Tidak diberi','Tidak berkaitan'])}
+  <label>Status luka</label>${seg('sl',['Sembuh','Tidak sembuh','Tidak berkaitan'])}</div>
+  <div class="card"><h2>Pendidikan kesihatan &amp; catatan</h2>
+  <label>Aktiviti pendidikan kesihatan diberikan</label>${seg('ak',['Lisan','Konsultasi individu','Risalah','Dialog','Video','Poster/Fish tail/Banner','Perbincangan kumpulan kecil'],'checkbox')}
+  <label>Catatan tambahan (jika ada)</label><textarea id="ct" rows="3"></textarea>
+  <div class="hint" id="gh">📍 Lokasi GPS akan direkodkan semasa hantar.</div>
+  <button class="b" id="sub2">Hantar</button></div>`;
+  bindNew();
+  $('#lo').onclick=()=>{localStorage.removeItem('acd_user');me=null;loginView()};
+  document.querySelectorAll('[name=gg]').forEach(r=>r.onchange=()=>$('#bite').classList.toggle('hide',val('gg')!=='Ya'));
+  $('#sub2').onclick=submit;
+}
+async function submit(){
+  if(!need(['lok','nm','ic','tl','al','ir']))return;
+  if(!val('vk')||!val('bk')||!val('gg'))return toast('Sila jawab semua soalan Ya/Tidak');
+  const g=val('gg')==='Ya';
+  if(g&&(!val('jn')||!val('ds')||!val('sh')||!val('sp2')||!val('sl')||!$('#ng').value||!$('#tg').value||!$('#ab').value))return toast('Lengkapkan butiran gigitan');
+  load(true,'Merekod lokasi GPS…');const p=await getGPS();
+  const d={tarikh:today(),pegawai:me.nama,jawatan:me.jawatan,telPegawai:me.tel,lokaliti:$('#lok').value,nama:$('#nm').value.trim(),ic:$('#ic').value,tel:$('#tl').value,alamat:$('#al').value.trim(),isiRumah:$('#ir').value,bela:$('#be').value.trim()||'Tidak',vaksin:val('vk'),bangkai:val('bk'),gigit:val('gg'),catatan:$('#ct').value.trim(),aktiviti:[...document.querySelectorAll('[name=ak]:checked')].map(e=>e.value),lat:p&&p.lat,lng:p&&p.lng,gpsMasa:p&&p.t};
+  if(g){const t=$('#tg').value.split('-');Object.assign(d,{jenis:val('jn'),digigit:$('#ng').value.trim(),tarikhGigit:t.reverse().join('/'),anggota:$('#ab').value.trim(),dos:val('ds'),statusHaiwan:val('sh'),statusPep:val('sp2'),statusLuka:val('sl')})}
+  const r=await call({action:'submit',data:d},'Menghantar…');
+  if(r.ok){toast('✅ Berjaya dihantar'+(p?'':' (tanpa GPS)'));window.scrollTo({top:0,behavior:'smooth'});form()}else toast(r.error||'Gagal hantar')
+}
+init();
+</script></body></html>
