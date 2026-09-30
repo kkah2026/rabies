@@ -23,7 +23,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--p2);box-
 button.b{width:100%;padding:14px;border:0;border-radius:12px;background:var(--p);color:#fff;font:600 1rem inherit;margin-top:16px}
 button.b:active{transform:scale(.98)}button.l{background:none;border:0;color:var(--p);font:inherit;padding:8px;margin-top:6px;width:100%}
 .ro{background:#ecfdf5;border-radius:12px;padding:12px;font-size:.85rem;line-height:1.5}
-.hide{display:none!important}
+.hide{display:none!important}#sg button{display:block;width:100%;text-align:left;padding:10px;border:0;border-bottom:1px solid var(--bd);background:#fff;font:inherit;font-size:.82rem}
 #ov{position:fixed;inset:0;background:#0f172acc;backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:#fff;z-index:99}
 #ov.on{display:flex}.sp{width:46px;height:46px;border:4px solid #ffffff44;border-top-color:#fff;border-radius:50%;animation:r .8s linear infinite}@keyframes r{to{transform:rotate(360deg)}}
 #toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#0f172a;color:#fff;padding:12px 18px;border-radius:12px;font-size:.88rem;z-index:100;opacity:0;pointer-events:none;transition:.3s;max-width:90%}
@@ -45,21 +45,22 @@ async function call(body,msg){load(true,msg);try{const r=await fetch(API,{method
 const opts=(a,ph)=>`<option value="">${ph||'-- Pilih --'}</option>`+a.map(v=>`<option>${v}</option>`).join('')+'<option value="__new">➕ Tambah baharu…</option>';
 const seg=(n,a,t='radio')=>`<div class="seg">${a.map(v=>`<label style="margin:0"><input type="${t}" name="${n}" value="${v}"><span>${v}</span></label>`).join('')}</div>`;
 const val=n=>(document.querySelector(`[name=${n}]:checked`)||{}).value||'';
-function bindNew(){document.querySelectorAll('select[data-new]').forEach(s=>s.onchange=()=>{if(s.value==='__new'){const v=(prompt('Masukkan nama baharu:')||'').trim().toUpperCase();if(v){s.insertAdjacentHTML('afterbegin',`<option>${v}</option>`);s.value=v}else s.value=''}})}
+function bindNew(){document.querySelectorAll('select[data-new]').forEach(s=>s.onchange=()=>{if(s.value==='__new'){const v=(prompt('Masukkan nama baharu:')||'').trim().toUpperCase();if(v){if(!L[s.dataset.new].includes(v))L[s.dataset.new].push(v);s.insertAdjacentHTML('afterbegin',`<option>${v}</option>`);s.value=v}else s.value=''}})}
 function phoneFix(el){el.value=el.value.replace(/\D/g,'');if(!el.value.startsWith('01'))el.value='01'+el.value.replace(/^0?1?/,'')}
-function icFix(el){el.value=el.value.replace(/\D/g,'').slice(0,12)}
+function icFix(el){el.value=el.value.replace(/\D/g,'').slice(0,12);if(el.value.length===12)advance(el)}
 function getGPS(){return new Promise(r=>navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>r({lat:p.coords.latitude.toFixed(7),lng:p.coords.longitude.toFixed(7),t:new Date().toLocaleString('en-GB')}),()=>r(null),{enableHighAccuracy:true,timeout:12000}):r(null))}
 function need(ids){let ok=true;ids.forEach(i=>{const e=document.getElementById(i);const bad=!e.value.trim();e.classList.toggle('bad',bad);if(bad)ok=false});if(!ok)toast('Sila lengkapkan ruangan bertanda merah');return ok}
 
 async function init(){
+  loadAddr();
   app.innerHTML='<div class="card"><div class="sk"></div><br><div class="sk"></div><br><div class="sk"></div></div>';
   try{const r=await(await fetch(API)).json();L=r.lists}catch(e){toast('Tidak dapat memuatkan senarai')}
   me?form():loginView();
 }
 function loginView(){
   $('#sub').textContent='Log masuk';
-  app.innerHTML=`<div class="card"><h2>Log masuk pegawai</h2><label>No. Kad Pengenalan</label><input id="lic" inputmode="numeric" placeholder="cth: 900101025555" oninput="icFix(this)"><button class="b" id="bl">Log masuk</button><button class="l" id="bs">Pengguna baharu? Daftar</button></div>`;
-  $('#bl').onclick=async()=>{if(!need(['lic']))return;const r=await call({action:'login',ic:$('#lic').value},'Menyemak…');
+  app.innerHTML=`<div class="card"><h2>Log masuk pegawai</h2><label>No. Kad Pengenalan</label><input id="lic" inputmode="numeric" oninput="icFix(this)"><button class="b" id="bl">Log masuk</button><button class="l" id="bs">Pengguna baharu? Daftar</button></div>`;
+  $('#bl').onclick=async()=>{if(!need(['lic']))return;if($('#lic').value.length!==12)return toast('IC mesti 12 digit');const r=await call({action:'login',ic:$('#lic').value},'Menyemak…');
     if(r.ok){me=r.user;localStorage.setItem('acd_user',JSON.stringify(me));form()}else toast(r.notFound?'IC tidak dijumpai. Sila daftar.':'Ralat')};
   $('#bs').onclick=signupView;
 }
@@ -67,12 +68,12 @@ function signupView(){
   $('#sub').textContent='Pendaftaran pengguna baharu';
   app.innerHTML=`<div class="card"><h2>Daftar pegawai</h2>
   <label>Nama (HURUF BESAR)</label><input id="sn" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()" autocomplete="name">
-  <label>No. Kad Pengenalan</label><input id="si" inputmode="numeric" oninput="icFix(this)" placeholder="12 digit, tanpa '-'"><div class="hint">Sifar di hadapan dikekalkan</div>
+  <label>No. Kad Pengenalan</label><input id="si" inputmode="numeric" oninput="icFix(this)">
   <label>No. Telefon</label><input id="st" inputmode="tel" value="01" oninput="phoneFix(this)">
-  <label>Jawatan</label><select id="sj" data-new>${opts(L.jawatan)}</select>
-  <label>Tempat Bertugas</label><select id="sp" data-new>${opts(L.tempat)}</select>
-  <label>PKD</label><select id="sk" data-new>${opts(L.pkd)}</select>
-  <div class="hint" style="margin-top:12px">Kebenaran lokasi dan kamera akan diminta (kamera untuk kegunaan akan datang sahaja).</div>
+  <label>Jawatan</label><select id="sj" data-new="jawatan">${opts(L.jawatan)}</select>
+  <label>Tempat Bertugas</label><select id="sp" data-new="tempat">${opts(L.tempat)}</select>
+  <label>PKD</label><select id="sk" data-new="pkd">${opts(L.pkd)}</select>
+  
   <button class="b" id="ss">Daftar &amp; Mula</button><button class="l" id="bb">Kembali</button></div>`;
   bindNew();$('#bb').onclick=loginView;
   $('#ss').onclick=async()=>{if(!need(['sn','si','st','sj','sp','sk']))return;
@@ -89,14 +90,14 @@ function form(){
   const ynt=n=>seg(n,['Ya','Tidak']);
   app.innerHTML=`<div class="card"><h2>Pegawai pelapor</h2><div class="ro"><b>${me.nama}</b><br>${me.jawatan} · ${me.tel}<br>Tarikh ACD: ${today()}</div><button class="l" id="lo">Bukan anda? Log keluar</button></div>
   <div class="card"><h2>Maklumat penghuni</h2>
-  <label>Lokaliti</label><select id="lok" data-new>${opts(L.lokaliti)}</select>
+  <label>Alamat (taip untuk cari)</label><textarea id="al" rows="2" autocomplete="off" oninput="this.value=this.value.toUpperCase();srch()"></textarea><div id="sg"></div><div id="fl" class="ro hide" style="background:#fef3c7;margin-top:8px"></div>
+  <label>Lokaliti</label><select id="lok" data-new="lokaliti">${opts(L.lokaliti)}</select>
   <label>Nama penuh penghuni</label><input id="nm" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
   <label>No. Kad Pengenalan</label><input id="ic" inputmode="numeric" oninput="icFix(this)">
   <label>No. Telefon</label><input id="tl" inputmode="tel" value="01" oninput="phoneFix(this)">
-  <label>Alamat</label><textarea id="al" rows="2"></textarea>
   <label>Jumlah isi rumah (nombor sahaja)</label><input id="ir" type="number" inputmode="numeric" min="1"></div>
   <div class="card"><h2>Haiwan peliharaan</h2>
-  <label>Ada bela haiwan peliharaan? (jika ya, nyatakan)</label><input id="be" placeholder="cth: 2 ekor kucing">
+  <label>Ada bela haiwan peliharaan? (jika ya, nyatakan)</label><input id="be">
   <label>Terima vaksin rabies untuk haiwan peliharaan?</label>${seg('vk',['Ya','Tidak','Tiada haiwan'])}
   <label>Pernah melihat bangkai atau haiwan berkelakuan tidak normal (kawasan berdekatan)?</label>${ynt('bk')}
   <label>Pernah digigit haiwan dalam masa 3 bulan sebelum?</label>${ynt('gg')}</div>
@@ -112,7 +113,7 @@ function form(){
   <div class="card"><h2>Pendidikan kesihatan &amp; catatan</h2>
   <label>Aktiviti pendidikan kesihatan diberikan</label>${seg('ak',['Lisan','Konsultasi individu','Risalah','Dialog','Video','Poster/Fish tail/Banner','Perbincangan kumpulan kecil'],'checkbox')}
   <label>Catatan tambahan (jika ada)</label><textarea id="ct" rows="3"></textarea>
-  <div class="hint" id="gh">📍 Lokasi GPS akan direkodkan semasa hantar.</div>
+  
   <button class="b" id="sub2">Hantar</button></div>`;
   bindNew();
   $('#lo').onclick=()=>{localStorage.removeItem('acd_user');me=null;loginView()};
@@ -120,15 +121,40 @@ function form(){
   $('#sub2').onclick=submit;
 }
 async function submit(){
-  if(!need(['lok','nm','ic','tl','al','ir']))return;
+  if(!need(['lok','nm','ic','tl','al','ir']))return;if($('#ic').value.length!==12){$('#ic').classList.add('bad');return toast('IC mesti 12 digit')}
   if(!val('vk')||!val('bk')||!val('gg'))return toast('Sila jawab semua soalan Ya/Tidak');
   const g=val('gg')==='Ya';
   if(g&&(!val('jn')||!val('ds')||!val('sh')||!val('sp2')||!val('sl')||!$('#ng').value||!$('#tg').value||!$('#ab').value))return toast('Lengkapkan butiran gigitan');
   load(true,'Merekod lokasi GPS…');const p=await getGPS();
-  const d={tarikh:today(),pegawai:me.nama,jawatan:me.jawatan,telPegawai:me.tel,lokaliti:$('#lok').value,nama:$('#nm').value.trim(),ic:$('#ic').value,tel:$('#tl').value,alamat:$('#al').value.trim(),isiRumah:$('#ir').value,bela:$('#be').value.trim()||'Tidak',vaksin:val('vk'),bangkai:val('bk'),gigit:val('gg'),catatan:$('#ct').value.trim(),aktiviti:[...document.querySelectorAll('[name=ak]:checked')].map(e=>e.value),lat:p&&p.lat,lng:p&&p.lng,gpsMasa:p&&p.t};
+  const d={tarikh:today(),pegawai:me.nama,jawatan:me.jawatan,telPegawai:me.tel,lokaliti:$('#lok').value,nama:$('#nm').value.trim(),ic:$('#ic').value,tel:$('#tl').value,alamat:$('#al').value.trim().toUpperCase(),isiRumah:$('#ir').value,bela:$('#be').value.trim()||'Tidak',vaksin:val('vk'),bangkai:val('bk'),gigit:val('gg'),catatan:$('#ct').value.trim(),aktiviti:[...document.querySelectorAll('[name=ak]:checked')].map(e=>e.value),lat:p&&p.lat,lng:p&&p.lng,gpsMasa:p&&p.t};
   if(g){const t=$('#tg').value.split('-');Object.assign(d,{jenis:val('jn'),digigit:$('#ng').value.trim(),tarikhGigit:t.reverse().join('/'),anggota:$('#ab').value.trim(),dos:val('ds'),statusHaiwan:val('sh'),statusPep:val('sp2'),statusLuka:val('sl')})}
   const r=await call({action:'submit',data:d},'Menghantar…');
-  if(r.ok){toast('✅ Berjaya dihantar'+(p?'':' (tanpa GPS)'));window.scrollTo({top:0,behavior:'smooth'});form()}else toast(r.error||'Gagal hantar')
+  if(r.ok){const i=A.findIndex(x=>x[0]===d.alamat),row=[d.alamat,d.nama,d.ic,d.tel,d.lokaliti,d.tarikh,me.nama];if(i>=0)A[i]=row;else A.push(row);setA(A);try{localStorage.setItem('acd_addr',JSON.stringify(A))}catch(e){}lastLok=d.lokaliti;toast('✅ Berjaya dihantar'+(p?'':' (tanpa GPS)'));window.scrollTo({top:0,behavior:'smooth'});form();$('#lok').value=lastLok}else toast(r.error||'Gagal hantar')
 }
+let A=[],K=[],M=[],lastLok='';
+function setA(r){A=r;K=r.map(x=>(x[0]+' '+x[1]+' '+x[2]).toUpperCase())}
+async function loadAddr(){
+  try{setA(JSON.parse(localStorage.getItem('acd_addr')||'[]'))}catch(e){}
+  try{const r=await(await fetch(API+'?action=addr')).json();if(r.ok){setA(r.rows);try{localStorage.setItem('acd_addr',JSON.stringify(r.rows))}catch(e){}}}catch(e){}
+}
+function srch(){
+  const q=$('#al').value.trim(),sg=$('#sg');$('#fl').classList.add('hide');
+  if(q.length<2){sg.innerHTML='';return}
+  M=[];for(let i=0;i<K.length&&M.length<8;i++)if(K[i].includes(q))M.push(i);
+  sg.innerHTML=M.map(i=>`<button type="button" onclick="pick(${i})">${A[i][0]}${A[i][1]?'<br><small>'+A[i][1]+'</small>':''}${A[i][5]?' ✅':''}</button>`).join('');
+}
+function pick(i){
+  const r=A[i];$('#sg').innerHTML='';$('#al').value=r[0];$('#nm').value=r[1]||'';$('#ic').value=r[2]||'';$('#tl').value=r[3]||'01';
+  if(r[4]){if(!L.lokaliti.includes(r[4])){L.lokaliti.push(r[4]);$('#lok').insertAdjacentHTML('afterbegin',`<option>${r[4]}</option>`)}$('#lok').value=r[4]}
+  const f=$('#fl');if(r[5]){f.innerHTML=`⚠️ Alamat ini telah diisi pada <b>${r[5]}</b> oleh <b>${r[6]}</b>`;f.classList.remove('hide')}else f.classList.add('hide');
+  const n=['lok','nm','ic','tl','ir'].map(x=>$('#'+x)).find(e=>!e.value||e.value==='01');(n||$('#ir')).focus({preventScroll:true});
+}
+function advance(el){
+  const seen={},list=[...app.querySelectorAll('input,select,textarea')].filter(e=>e.offsetParent&&e.type!=='checkbox'&&(e.type!=='radio'||(seen[e.name]?false:(seen[e.name]=1))));
+  const i=list.findIndex(e=>e===el||(el.type==='radio'&&e.name===el.name)),n=list[i+1];if(!n)return;
+  if(n.type==='radio')n.closest('.seg').scrollIntoView({block:'center',behavior:'smooth'});else{n.focus({preventScroll:true});n.scrollIntoView({block:'center',behavior:'smooth'})}
+}
+app.addEventListener('change',e=>{const t=e.target;if(t.type==='radio'||(t.tagName==='SELECT'&&t.value&&t.value!=='__new'))setTimeout(()=>advance(t),120)});
+app.addEventListener('keydown',e=>{if(e.key==='Enter'&&!['TEXTAREA','BUTTON'].includes(e.target.tagName)){e.preventDefault();advance(e.target)}});
 init();
 </script></body></html>
