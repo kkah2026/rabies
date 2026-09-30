@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ms"><head>
 <meta charset="utf-8">
@@ -47,7 +48,7 @@ const seg=(n,a,t='radio')=>`<div class="seg">${a.map(v=>`<label style="margin:0"
 const val=n=>(document.querySelector(`[name=${n}]:checked`)||{}).value||'';
 function bindNew(){document.querySelectorAll('select[data-new]').forEach(s=>s.onchange=()=>{if(s.value==='__new'){const v=(prompt('Masukkan nama baharu:')||'').trim().toUpperCase();if(v){if(!L[s.dataset.new].includes(v))L[s.dataset.new].push(v);s.insertAdjacentHTML('afterbegin',`<option>${v}</option>`);s.value=v}else s.value=''}})}
 function phoneFix(el){el.value=el.value.replace(/\D/g,'');if(!el.value.startsWith('01'))el.value='01'+el.value.replace(/^0?1?/,'')}
-function icFix(el){const was=+el.dataset.l||0;el.value=el.value.replace(/\D/g,'').slice(0,12);el.dataset.l=el.value.length;if(el.value.length===12&&was<12)advance(el)}
+function icFix(el,alpha){const was=+el.dataset.l||0;el.value=alpha?el.value.replace(/[^A-Za-z0-9]/g,'').toUpperCase().slice(0,12):el.value.replace(/\D/g,'').slice(0,12);el.dataset.l=el.value.length;if(el.value.length===12&&was<12)advance(el)}
 function getGPS(){return new Promise(r=>navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>r({lat:p.coords.latitude.toFixed(7),lng:p.coords.longitude.toFixed(7),t:new Date().toLocaleString('en-GB')}),()=>r(null),{enableHighAccuracy:true,timeout:12000}):r(null))}
 function need(ids){let ok=true;ids.forEach(i=>{const e=document.getElementById(i);const bad=!e.value.trim();e.classList.toggle('bad',bad);if(bad)ok=false});if(!ok)toast('Sila lengkapkan ruangan bertanda merah');return ok}
 
@@ -93,7 +94,7 @@ function form(){
   <label>Alamat (taip untuk cari)</label><textarea id="al" rows="2" autocomplete="off" oninput="this.value=this.value.toUpperCase();srch()"></textarea><div id="sg"></div><div id="fl" class="ro hide" style="background:#fef3c7;margin-top:8px"></div>
   <label>Lokaliti</label><select id="lok" data-new="lokaliti">${opts(L.lokaliti)}</select>
   <label>Nama penuh penghuni</label><input id="nm" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
-  <label>No. Kad Pengenalan</label><input id="ic" inputmode="numeric" oninput="icFix(this)">
+  <label>No. Kad Pengenalan</label><input id="ic" autocapitalize="characters" oninput="icFix(this,1)">
   <label>No. Telefon</label><input id="tl" inputmode="tel" value="01" oninput="phoneFix(this)">
   <label>Jumlah isi rumah (nombor sahaja)</label><input id="ir" type="number" inputmode="numeric" min="1"></div>
   <div class="card"><h2>Haiwan peliharaan</h2>
@@ -151,8 +152,8 @@ function pick(i){
   const n=['lok','nm','ic','tl','ir'].map(x=>$('#'+x)).find(e=>!e.value||e.value==='01');(n||$('#ir')).focus({preventScroll:true});
 }
 function advance(el){
-  const seen={},list=[...app.querySelectorAll('input,select,textarea')].filter(e=>e.offsetParent&&e.type!=='checkbox'&&(e.type!=='radio'||(seen[e.name]?false:(seen[e.name]=1))));
-  const i=list.findIndex(e=>e===el||(el.type==='radio'&&e.name===el.name)),n=list[i+1];if(!n)return;
+  const seen={},list=[...app.querySelectorAll('input,select,textarea')].filter(e=>(e.type==='radio'?e.closest('.seg'):e).offsetParent&&e.type!=='checkbox'&&(e.type!=='radio'||(seen[e.name]?false:(seen[e.name]=1))));
+  const i=list.findIndex(e=>e===el||(el.type==='radio'&&e.name===el.name)),n=list[i+1];if(i<0||!n)return;
   if(n.type==='radio')n.closest('.seg').scrollIntoView({block:'center',behavior:'smooth'});else n.focus()
 }
 app.addEventListener('change',e=>{const t=e.target;if(t.type==='radio'||(t.tagName==='SELECT'&&t.value&&t.value!=='__new'))setTimeout(()=>advance(t),120)});
