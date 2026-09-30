@@ -91,7 +91,7 @@ function form(){
   const ynt=n=>seg(n,['Ya','Tidak']);
   app.innerHTML=`<div class="card"><h2>Pegawai pelapor</h2><div class="ro"><b>${me.nama}</b><br>${me.jawatan} · ${me.tel}<br>Tarikh ACD: ${today()}</div><button class="l" id="lo">Bukan anda? Log keluar</button></div>
   <div class="card"><h2>Maklumat penghuni</h2>
-  <label>Alamat (taip untuk cari/masuk manual)</label><textarea id="al" rows="2" autocomplete="off" oninput="this.value=this.value.toUpperCase();srch()"></textarea><div id="sg"></div><div id="fl" class="ro hide" style="background:#fef3c7;margin-top:8px"></div>
+  <label>Alamat (taip jalan/taman untuk cari /enter manual)</label><textarea id="al" rows="2" autocomplete="off" oninput="this.value=this.value.toUpperCase();srch()"></textarea><div id="sg"></div><div id="fl" class="ro hide" style="background:#fef3c7;margin-top:8px"></div>
   <label>Lokaliti</label><select id="lok" data-new="lokaliti">${opts(L.lokaliti)}</select>
   <label>Nama penuh penghuni</label><input id="nm" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
   <label>No. Kad Pengenalan</label><input id="ic" autocapitalize="characters" oninput="icFix(this,1)">
