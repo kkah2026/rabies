@@ -47,7 +47,7 @@ const seg=(n,a,t='radio')=>`<div class="seg">${a.map(v=>`<label style="margin:0"
 const val=n=>(document.querySelector(`[name=${n}]:checked`)||{}).value||'';
 function bindNew(){document.querySelectorAll('select[data-new]').forEach(s=>s.onchange=()=>{if(s.value==='__new'){const v=(prompt('Masukkan nama baharu:')||'').trim().toUpperCase();if(v){if(!L[s.dataset.new].includes(v))L[s.dataset.new].push(v);s.insertAdjacentHTML('afterbegin',`<option>${v}</option>`);s.value=v}else s.value=''}})}
 function phoneFix(el){el.value=el.value.replace(/\D/g,'');if(!el.value.startsWith('01'))el.value='01'+el.value.replace(/^0?1?/,'')}
-function icFix(el){el.value=el.value.replace(/\D/g,'').slice(0,12);if(el.value.length===12)advance(el)}
+function icFix(el){const was=+el.dataset.l||0;el.value=el.value.replace(/\D/g,'').slice(0,12);el.dataset.l=el.value.length;if(el.value.length===12&&was<12)advance(el)}
 function getGPS(){return new Promise(r=>navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>r({lat:p.coords.latitude.toFixed(7),lng:p.coords.longitude.toFixed(7),t:new Date().toLocaleString('en-GB')}),()=>r(null),{enableHighAccuracy:true,timeout:12000}):r(null))}
 function need(ids){let ok=true;ids.forEach(i=>{const e=document.getElementById(i);const bad=!e.value.trim();e.classList.toggle('bad',bad);if(bad)ok=false});if(!ok)toast('Sila lengkapkan ruangan bertanda merah');return ok}
 
@@ -141,8 +141,9 @@ function srch(){
   const q=$('#al').value.trim(),sg=$('#sg');$('#fl').classList.add('hide');
   if(q.length<2){sg.innerHTML='';return}
   M=[];for(let i=0;i<K.length&&M.length<8;i++)if(K[i].includes(q))M.push(i);
-  sg.innerHTML=M.map(i=>`<button type="button" onclick="pick(${i})">${A[i][0]}${A[i][1]?'<br><small>'+A[i][1]+'</small>':''}${A[i][5]?' ✅':''}</button>`).join('');
+  sg.innerHTML=M.map(i=>`<button type="button" onclick="pick(${i})">${A[i][0]}${A[i][1]?'<br><small>'+A[i][1]+'</small>':''}${A[i][5]?' ✅':''}</button>`).join('')+`<button type="button" onclick="manual()" style="color:var(--p);font-weight:600">✍️ ${M.length?'Tiada dalam senarai? ':'Tiada padanan. '}Isi manual</button>`;
 }
+function manual(){$('#sg').innerHTML='';$('#lok').focus()}
 function pick(i){
   const r=A[i];$('#sg').innerHTML='';$('#al').value=r[0];$('#nm').value=r[1]||'';$('#ic').value=r[2]||'';$('#tl').value=r[3]||'01';
   if(r[4]){if(!L.lokaliti.includes(r[4])){L.lokaliti.push(r[4]);$('#lok').insertAdjacentHTML('afterbegin',`<option>${r[4]}</option>`)}$('#lok').value=r[4]}
@@ -152,7 +153,7 @@ function pick(i){
 function advance(el){
   const seen={},list=[...app.querySelectorAll('input,select,textarea')].filter(e=>e.offsetParent&&e.type!=='checkbox'&&(e.type!=='radio'||(seen[e.name]?false:(seen[e.name]=1))));
   const i=list.findIndex(e=>e===el||(el.type==='radio'&&e.name===el.name)),n=list[i+1];if(!n)return;
-  if(n.type==='radio')n.closest('.seg').scrollIntoView({block:'center',behavior:'smooth'});else{n.focus({preventScroll:true});n.scrollIntoView({block:'center',behavior:'smooth'})}
+  if(n.type==='radio')n.closest('.seg').scrollIntoView({block:'center',behavior:'smooth'});else n.focus()
 }
 app.addEventListener('change',e=>{const t=e.target;if(t.type==='radio'||(t.tagName==='SELECT'&&t.value&&t.value!=='__new'))setTimeout(()=>advance(t),120)});
 app.addEventListener('keydown',e=>{if(e.key==='Enter'&&!['TEXTAREA','BUTTON'].includes(e.target.tagName)){e.preventDefault();advance(e.target)}});
