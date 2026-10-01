@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ms"><head>
 <meta charset="utf-8">
@@ -30,6 +29,7 @@ button.b:active{transform:scale(.98)}button.l{background:none;border:0;color:var
 #toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#0f172a;color:#fff;padding:12px 18px;border-radius:12px;font-size:.88rem;z-index:100;opacity:0;pointer-events:none;transition:.3s;max-width:90%}
 #toast.on{opacity:1}
 .sk{height:44px;border-radius:12px;background:linear-gradient(90deg,#e5ecea 25%,#f3f7f6 50%,#e5ecea 75%);background-size:200% 100%;animation:sh 1.2s infinite}@keyframes sh{to{background-position:-200% 0}}
+.me{width:18px;height:18px;border-radius:50%;background:#2563eb;border:3px solid #fff;box-shadow:0 0 0 5px #2563eb55;position:relative;left:-9px;top:-9px}.me span{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;font:600 11px system-ui;padding:3px 8px;border-radius:8px;white-space:nowrap}#map{border-radius:12px;overflow:hidden;z-index:0}
 </style></head><body>
 <header><h1>🐕 Active Case Detection (ACD) Rabies</h1><p id="sub">Borang pegawai</p></header>
 <main id="app"></main>
@@ -49,20 +49,20 @@ const val=n=>(document.querySelector(`[name=${n}]:checked`)||{}).value||'';
 function bindNew(){document.querySelectorAll('select[data-new]').forEach(s=>s.onchange=()=>{if(s.value==='__new'){const v=(prompt('Masukkan nama baharu:')||'').trim().toUpperCase();if(v){if(!L[s.dataset.new].includes(v))L[s.dataset.new].push(v);s.insertAdjacentHTML('afterbegin',`<option>${v}</option>`);s.value=v}else s.value=''}})}
 function phoneFix(el){el.value=el.value.replace(/\D/g,'');if(!el.value.startsWith('01'))el.value='01'+el.value.replace(/^0?1?/,'')}
 function icFix(el,alpha){const was=+el.dataset.l||0;el.value=alpha?el.value.replace(/[^A-Za-z0-9]/g,'').toUpperCase().slice(0,12):el.value.replace(/\D/g,'').slice(0,12);el.dataset.l=el.value.length;if(el.value.length===12&&was<12)advance(el)}
-function getGPS(){return new Promise(r=>navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>r({lat:p.coords.latitude.toFixed(7),lng:p.coords.longitude.toFixed(7),t:new Date().toLocaleString('en-GB')}),()=>r(null),{enableHighAccuracy:true,timeout:12000}):r(null))}
+function getGPS(){return new Promise(r=>navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>r({lat:p.coords.latitude.toFixed(7),lng:p.coords.longitude.toFixed(7),t:new Date().toLocaleString('en-GB'),acc:Math.round(p.coords.accuracy),ts:Date.now()}),()=>r(null),{enableHighAccuracy:true,maximumAge:0,timeout:15000}):r(null))}
 function need(ids){let ok=true;ids.forEach(i=>{const e=document.getElementById(i);const bad=!e.value.trim();e.classList.toggle('bad',bad);if(bad)ok=false});if(!ok)toast('Sila lengkapkan ruangan bertanda merah');return ok}
 
 async function init(){
   loadAddr();
   app.innerHTML='<div class="card"><div class="sk"></div><br><div class="sk"></div><br><div class="sk"></div></div>';
   try{const r=await(await fetch(API)).json();L=r.lists}catch(e){toast('Tidak dapat memuatkan senarai')}
-  me?form():loginView();
+  me?enter():loginView();
 }
 function loginView(){
   $('#sub').textContent='Log masuk';
   app.innerHTML=`<div class="card"><h2>Log masuk pegawai</h2><label>No. Kad Pengenalan</label><input id="lic" inputmode="numeric" oninput="icFix(this)"><button class="b" id="bl">Log masuk</button><button class="l" id="bs">Pengguna baharu? Daftar</button></div>`;
   $('#bl').onclick=async()=>{if(!need(['lic']))return;if($('#lic').value.length!==12)return toast('IC mesti 12 digit');const r=await call({action:'login',ic:$('#lic').value},'Menyemak…');
-    if(r.ok){me=r.user;localStorage.setItem('acd_user',JSON.stringify(me));form()}else toast(r.notFound?'IC tidak dijumpai. Sila daftar.':'Ralat')};
+    if(r.ok){me=r.user;localStorage.setItem('acd_user',JSON.stringify(me));enter()}else toast(r.notFound?'IC tidak dijumpai. Sila daftar.':'Ralat')};
   $('#bs').onclick=signupView;
 }
 function signupView(){
@@ -80,18 +80,18 @@ function signupView(){
   $('#ss').onclick=async()=>{if(!need(['sn','si','st','sj','sp','sk']))return;
     if($('#si').value.length!==12){$('#si').classList.add('bad');return toast('IC mesti 12 digit')}
     load(true,'Meminta kebenaran lokasi & kamera…');
-    gps=await getGPS();
+    gps=await getGPS();if(!gps){load(false);return toast('Kebenaran lokasi diperlukan untuk mendaftar')}
     try{const s=await navigator.mediaDevices.getUserMedia({video:true});s.getTracks().forEach(t=>t.stop())}catch(e){}
     const u={nama:$('#sn').value.trim(),ic:$('#si').value,tel:$('#st').value,jawatan:$('#sj').value,tempat:$('#sp').value,pkd:$('#sk').value,lat:gps&&gps.lat,lng:gps&&gps.lng};
     const r=await call({action:'signup',user:u},'Mendaftar…');
-    if(r.ok){me=r.user;localStorage.setItem('acd_user',JSON.stringify(me));toast('Pendaftaran berjaya');form()}else toast(r.error||'Gagal daftar')};
+    if(r.ok){me=r.user;localStorage.setItem('acd_user',JSON.stringify(me));toast('Pendaftaran berjaya');enter()}else toast(r.error||'Gagal daftar')};
 }
 function form(){
   $('#sub').textContent='Borang ACD';
   const ynt=n=>seg(n,['Ya','Tidak']);
   app.innerHTML=`<div class="card"><h2>Pegawai pelapor</h2><div class="ro"><b>${me.nama}</b><br>${me.jawatan} · ${me.tel}<br>Tarikh ACD: ${today()}</div><button class="l" id="lo">Bukan anda? Log keluar</button></div>
   <div class="card"><h2>Maklumat penghuni</h2>
-  <label>Alamat (taip jalan/taman untuk cari senarai MPKP atau enter manual)</label><textarea id="al" rows="2" autocomplete="off" oninput="this.value=this.value.toUpperCase();srch()"></textarea><div id="sg"></div><div id="fl" class="ro hide" style="background:#fef3c7;margin-top:8px"></div>
+  <label>Alamat (taip jalan/taman cari senarai MPKP atau enter manual)</label><textarea id="al" rows="2" autocomplete="off" oninput="this.value=this.value.toUpperCase();srch()"></textarea><div id="sg"></div><div id="fl" class="ro hide" style="background:#fef3c7;margin-top:8px"></div>
   <label>Lokaliti</label><select id="lok" data-new="lokaliti">${opts(L.lokaliti)}</select>
   <label>Nama penuh penghuni</label><input id="nm" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
   <label>No. Kad Pengenalan/Passport</label><input id="ic" autocapitalize="characters" oninput="icFix(this,1)">
@@ -115,22 +115,18 @@ function form(){
   <label>Aktiviti pendidikan kesihatan diberikan</label>${seg('ak',['Lisan','Konsultasi individu','Risalah','Dialog','Video','Poster/Fish tail/Banner','Perbincangan kumpulan kecil'],'checkbox')}
   <label>Catatan tambahan (jika ada)</label><textarea id="ct" rows="3"></textarea>
   
-  <button class="b" id="sub2">Hantar</button></div>`;
+  <label>Lokasi geotag anda</label><div id="map" class="sk" style="height:220px"></div><div class="hint" id="gi"></div><button class="b" id="sub2">Hantar</button></div>`;
   bindNew();
-  $('#lo').onclick=()=>{localStorage.removeItem('acd_user');me=null;loginView()};
+  $('#lo').onclick=()=>{if(wid!=null){navigator.geolocation.clearWatch(wid);wid=null}localStorage.removeItem('acd_user');me=null;loginView()};
   document.querySelectorAll('[name=gg]').forEach(r=>r.onchange=()=>$('#bite').classList.toggle('hide',val('gg')!=='Ya'));
-  $('#sub2').onclick=submit;
+  $('#sub2').onclick=submit;mountMap();
 }
-  async function submit(){
-  if(!need(['lok','nm','ic','tl','al','ir']))return;
-  const ic = $('#ic').value.trim();
-  if(!/^[A-Za-z0-9]{1,12}$/.test(ic)){
-    $('#ic').classList.add('bad');
-    return toast('No. Kad Pengenalan/Passport tidak sah');}$('#ic').classList.remove('bad');
+async function submit(){
+  if(!need(['lok','nm','ic','tl','al','ir']))return;const ic=$('#ic').value.trim();if(!/^[A-Za-z0-9]{1,12}$/.test(ic)){$('#ic').classList.add('bad');return toast('No. Kad Pengenalan/Passport tidak sah')}$('#ic').classList.remove('bad');
   if(!val('vk')||!val('bk')||!val('gg'))return toast('Sila jawab semua soalan Ya/Tidak');
   const g=val('gg')==='Ya';
   if(g&&(!val('jn')||!val('ds')||!val('sh')||!val('sp2')||!val('sl')||!$('#ng').value||!$('#tg').value||!$('#ab').value))return toast('Lengkapkan butiran gigitan');
-  load(true,'Merekod lokasi GPS…');const p=await getGPS();
+  load(true,'Merekod lokasi GPS…');let p=await getGPS();if(!p&&pos&&Date.now()-pos.ts<30000)p=pos;if(!p){load(false);return toast('Lokasi tidak dapat dikesan. Hidupkan GPS dan benarkan lokasi.')}
   const d={tarikh:today(),pegawai:me.nama,jawatan:me.jawatan,telPegawai:me.tel,lokaliti:$('#lok').value,nama:$('#nm').value.trim(),ic:$('#ic').value,tel:$('#tl').value,alamat:$('#al').value.trim().toUpperCase(),isiRumah:$('#ir').value,bela:$('#be').value.trim()||'Tidak',vaksin:val('vk'),bangkai:val('bk'),gigit:val('gg'),catatan:$('#ct').value.trim(),aktiviti:[...document.querySelectorAll('[name=ak]:checked')].map(e=>e.value),lat:p&&p.lat,lng:p&&p.lng,gpsMasa:p&&p.t};
   if(g){const t=$('#tg').value.split('-');Object.assign(d,{jenis:val('jn'),digigit:$('#ng').value.trim(),tarikhGigit:t.reverse().join('/'),anggota:$('#ab').value.trim(),dos:val('ds'),statusHaiwan:val('sh'),statusPep:val('sp2'),statusLuka:val('sl')})}
   const r=await call({action:'submit',data:d},'Menghantar…');
@@ -162,5 +158,36 @@ function advance(el){
 }
 app.addEventListener('change',e=>{const t=e.target;if(t.type==='radio'||(t.tagName==='SELECT'&&t.value&&t.value!=='__new'))setTimeout(()=>advance(t),120)});
 app.addEventListener('keydown',e=>{if(e.key==='Enter'&&!['TEXTAREA','BUTTON'].includes(e.target.tagName)){e.preventDefault();advance(e.target)}});
+let pos=null,wid=null,map=null,mk=null,ci=null;
+async function enter(){load(true,'Mengesan lokasi GPS…');const p=await getGPS();load(false);if(!p)return gateView();pos=p;startWatch();form()}
+function gateView(){
+  $('#sub').textContent='Lokasi diperlukan';
+  app.innerHTML=`<div class="card" style="text-align:center"><div style="font-size:2.6rem">📍</div><h2>Kebenaran lokasi diperlukan</h2><p style="font-size:.88rem;line-height:1.5">Borang tidak boleh digunakan tanpa lokasi GPS. Hidupkan GPS dan benarkan akses lokasi untuk laman ini, kemudian tekan Cuba lagi.</p><button class="b" id="rt">Cuba lagi</button></div>`;
+  $('#rt').onclick=enter;
+}
+function startWatch(){
+  if(wid!=null||!navigator.geolocation)return;
+  wid=navigator.geolocation.watchPosition(p=>{pos={lat:p.coords.latitude.toFixed(7),lng:p.coords.longitude.toFixed(7),acc:Math.round(p.coords.accuracy),t:new Date().toLocaleString('en-GB'),ts:Date.now()};updMap()},
+    ()=>{const g=$('#gi');if(g)g.textContent='⚠️ Lokasi tidak dapat dikesan. Hidupkan GPS.'},{enableHighAccuracy:true,maximumAge:5000,timeout:30000});
+}
+function loadLeaflet(){return new Promise(res=>{if(window.L&&window.L.map)return res();
+  const c=document.createElement('link');c.rel='stylesheet';c.href='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';document.head.append(c);
+  const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';s.onload=res;s.onerror=res;document.head.append(s)})}
+async function mountMap(){
+  const el=$('#map');if(!el||!pos)return;await loadLeaflet();const LF=window.L;
+  if(!LF||!LF.map){el.textContent='Peta tidak dapat dimuatkan';return}
+  if(map){try{map.remove()}catch(e){}map=null}
+  el.classList.remove('sk');
+  map=LF.map(el,{zoomControl:false}).setView([pos.lat,pos.lng],17);
+  LF.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+  mk=LF.marker([pos.lat,pos.lng],{icon:LF.divIcon({className:'',html:'<div class="me"><span>Anda di sini</span></div>',iconSize:[0,0]})}).addTo(map);
+  ci=LF.circle([pos.lat,pos.lng],{radius:pos.acc||20,color:'#2563eb',weight:1,fillOpacity:.1}).addTo(map);
+  setTimeout(()=>map&&map.invalidateSize(),300);updMap();
+}
+function updMap(){
+  const g=$('#gi');if(!map||!pos)return;
+  mk.setLatLng([pos.lat,pos.lng]);ci.setLatLng([pos.lat,pos.lng]).setRadius(pos.acc||20);map.setView([pos.lat,pos.lng]);
+  if(g)g.textContent=`📍 Lokasi semasa anda (±${pos.acc} m) akan direkodkan semasa hantar`;
+}
 init();
 </script></body></html>
