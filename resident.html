@@ -82,7 +82,7 @@ function load(on,t){$('#ov').classList.toggle('on',on);if(t)$('#ovt').textConten
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),3400)}
 document.addEventListener('change',e=>{if(e.target.name==='jn')$('#jl').classList.toggle('hide',e.target.value!=='Lain-lain')});
 function show(n){pgs.forEach((e,i)=>e.classList.toggle('hide',i!==n));scrollTo({top:0});if(n===2)initMap()}
-function phoneFix(el){el.value=el.value.replace(/\D/g,'').slice(0,11);if(el.value&&el.value[0]!=='0')el.value='0'+el.value}
+function phoneFix(el){el.value=el.value.replace(/\D/g,'').slice(0,12);if(el.value&&el.value[0]!=='0')el.value='0'+el.value}
 function need(ids){let ok=true;ids.forEach(i=>{const e=document.getElementById(i),bad=!e.value.trim();e.classList.toggle('bad',bad);if(bad)ok=false});if(!ok)toast('Sila lengkapkan ruangan bertanda merah');return ok}
 function lab(){$('#nx').textContent=val('pn')==='Tidak'?'Hantar':'Seterusnya'}
 // ---- Peta & geotag (berdasarkan alamat rumah) ----
