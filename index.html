@@ -30,6 +30,7 @@ button.b:active{transform:scale(.98)}button.l{background:none;border:0;color:var
 #toast.on{opacity:1}
 .sk{height:44px;border-radius:12px;background:linear-gradient(90deg,#e5ecea 25%,#f3f7f6 50%,#e5ecea 75%);background-size:200% 100%;animation:sh 1.2s infinite}@keyframes sh{to{background-position:-200% 0}}
 .me{width:18px;height:18px;border-radius:50%;background:#2563eb;border:3px solid #fff;box-shadow:0 0 0 5px #2563eb55;position:relative;left:-9px;top:-9px}.me span{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;font:600 11px system-ui;padding:3px 8px;border-radius:8px;white-space:nowrap}#map{border-radius:12px;overflow:hidden;z-index:0}
+#sg{max-height:280px;overflow-y:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--bd);border-radius:12px;margin-top:6px}#sg:empty{display:none}
 </style></head><body>
 <header><h1>🐕 Active Case Detection (ACD) Rabies</h1><p id="sub">Borang pegawai</p></header>
 <main id="app"></main>
@@ -150,8 +151,8 @@ async function loadAddr(){
 function srch(){
   const q=$('#al').value.trim(),sg=$('#sg');$('#fl').classList.add('hide');
   if(q.length<2){sg.innerHTML='';return}
-  M=[];for(let i=0;i<K.length&&M.length<8;i++)if(K[i].includes(q))M.push(i);
-  sg.innerHTML=M.map(i=>`<button type="button" onclick="pick(${i})">${A[i][0]}${A[i][1]?'<br><small>'+A[i][1]+'</small>':''}${A[i][5]?' ✅':''}</button>`).join('')+`<button type="button" onclick="manual()" style="color:var(--p);font-weight:600">✍️ ${M.length?'Tiada dalam senarai? ':'Tiada padanan. '}Isi manual</button>`;
+  M=[];for(let i=0;i<K.length&&M.length<50;i++)if(K[i].includes(q))M.push(i);
+  sg.innerHTML=(M.length>=50?'<div class="hint" style="padding:8px 11px;margin:0">Menunjukkan 50 padanan pertama. Taip lebih lanjut untuk mengecilkan.</div>':'')+M.map(i=>`<button type="button" onclick="pick(${i})">${A[i][0]}${A[i][1]?'<br><small>'+A[i][1]+'</small>':''}${A[i][5]?' ✅':''}</button>`).join('')+`<button type="button" onclick="manual()" style="color:var(--p);font-weight:600;position:sticky;bottom:0;background:#f0fdfa">✍️ ${M.length?'Tiada dalam senarai? ':'Tiada padanan. '}Isi manual</button>`;
 }
 function manual(){$('#sg').innerHTML='';$('#lok').focus()}
 function pick(i){
@@ -181,7 +182,7 @@ function gateView(){
 function startWatch(){
   if(wid!=null||!navigator.geolocation)return;
   wid=navigator.geolocation.watchPosition(p=>{pos={lat:p.coords.latitude.toFixed(7),lng:p.coords.longitude.toFixed(7),acc:Math.round(p.coords.accuracy),t:new Date().toLocaleString('en-GB'),ts:Date.now()};updMap()},
-    ()=>{const g=$('#gi');if(g)g.textContent='⚠️ Lokasi tidak dapat dikesan. buka GPS. Untuk safari(iPhone :  click "3 dots" - Share- View More - Add to home Screen- Add'},{enableHighAccuracy:true,maximumAge:5000,timeout:30000});
+    ()=>{const g=$('#gi');if(g)g.textContent='⚠️ Lokasi tidak dapat dikesan. Hidupkan GPS.'},{enableHighAccuracy:true,maximumAge:5000,timeout:30000});
 }
 function loadLeaflet(){return new Promise(res=>{if(window.L&&window.L.map)return res();
   const c=document.createElement('link');c.rel='stylesheet';c.href='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';document.head.append(c);
