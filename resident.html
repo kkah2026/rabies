@@ -29,6 +29,7 @@ button.l{background:none;border:0;color:var(--p);font:inherit;padding:10px;margi
 .sk{border-radius:12px;background:linear-gradient(90deg,#e5ecea 25%,#f3f7f6 50%,#e5ecea 75%);background-size:200% 100%;animation:sh 1.2s infinite}@keyframes sh{to{background-position:-200% 0}}
 #map{height:280px;border-radius:12px;overflow:hidden;z-index:0}.pin{position:relative;font-size:32px;line-height:1;transform:translate(-50%,-100%)}.pin span{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;font:600 11px system-ui;padding:3px 8px;border-radius:8px;white-space:nowrap;margin-bottom:2px}
 .gate{margin-top:32px;padding:18px 16px;background:#f0fdfa;border:2px solid var(--p2);border-radius:16px}.gq{font-size:1.1rem;line-height:1.5;margin-bottom:14px}.gq b{color:var(--p)}.seg.big{flex-wrap:nowrap}.seg.big label{flex:1}.seg.big span{text-align:center;padding:16px 10px;font-size:1.05rem;font-weight:600}
+#sg{border:1px solid var(--bd);border-radius:12px;margin-top:6px;overflow:hidden}#sg:empty{display:none}#sg button{display:block;width:100%;text-align:left;padding:11px;border:0;border-bottom:1px solid var(--bd);background:#fff;font:inherit;font-size:.82rem;line-height:1.4}
 </style></head><body>
 <header><h1>🐕 Saringan Kes Gigitan Haiwan</h1><p>Pejabat Kesihatan Daerah Kubang Pasu</p></header>
 <main>
@@ -48,7 +49,7 @@ button.l{background:none;border:0;color:var(--p);font:inherit;padding:10px;margi
 <label>Jantina</label><div class="seg"><label style="margin:0"><input type="radio" name="jt" value="Lelaki"><span>Lelaki</span></label><label style="margin:0"><input type="radio" name="jt" value="Perempuan"><span>Perempuan</span></label></div>
 <label>No. telefon / WhatsApp untuk dihubungi</label><input id="tl" inputmode="tel" value="01" oninput="phoneFix(this)">
 <label>Alamat kediaman semasa</label><textarea id="al" rows="3" autocomplete="off" oninput="this.value=this.value.toUpperCase();geo()"></textarea>
-<label>Pin lokasi rumah anda</label><div id="map" class="sk"></div><div class="hint" id="gi">Taip alamat di atas, pin akan bergerak ke lokasi rumah anda.</div>
+<div id="sg"></div><label>Pin lokasi rumah anda</label><div id="map" class="sk"></div><div class="hint" id="gi">Taip alamat dan pilih daripada senarai cadangan, atau ketik pada peta untuk letak pin.</div><div id="pa" class="hide" style="background:#f0fdfa;border-radius:10px;padding:10px;margin-top:8px;font-size:.8rem;line-height:1.5"></div>
 <button class="l" onclick="useMe()">📍 Guna lokasi semasa saya (jika berada di rumah)</button>
 <label>Bilangan isi rumah</label><input id="ir" type="number" inputmode="numeric" min="1">
 <div class="gate"><div class="gq">Pernah <b>anda</b> atau <b>mana-mana isi rumah</b> mengalami <b>gigitan</b> atau <b>cakaran</b> haiwan antara <b>Jun 2026</b> hingga <b>September 2026</b>?</div>
@@ -82,11 +83,11 @@ function load(on,t){$('#ov').classList.toggle('on',on);if(t)$('#ovt').textConten
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),3400)}
 document.addEventListener('change',e=>{if(e.target.name==='jn')$('#jl').classList.toggle('hide',e.target.value!=='Lain-lain')});
 function show(n){pgs.forEach((e,i)=>e.classList.toggle('hide',i!==n));scrollTo({top:0});if(n===2)initMap()}
-function phoneFix(el){el.value=el.value.replace(/\D/g,'').slice(0,12);if(el.value&&el.value[0]!=='0')el.value='0'+el.value}
+function phoneFix(el){el.value=el.value.replace(/\D/g,'').slice(0,11);if(el.value&&el.value[0]!=='0')el.value='0'+el.value}
 function need(ids){let ok=true;ids.forEach(i=>{const e=document.getElementById(i),bad=!e.value.trim();e.classList.toggle('bad',bad);if(bad)ok=false});if(!ok)toast('Sila lengkapkan ruangan bertanda merah');return ok}
 function lab(){$('#nx').textContent=val('pn')==='Tidak'?'Hantar':'Seterusnya'}
 // ---- Peta & geotag (berdasarkan alamat rumah) ----
-let map,mk,pin=null,manual=false,tmr;
+let map,mk,pin=null,manual=false,tmr,SG=[],sgq=0,rq=0,lastAddr='';
 function loadLeaflet(){return new Promise(res=>{if(window.L&&window.L.map)return res();const c=document.createElement('link');c.rel='stylesheet';c.href='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';document.head.append(c);const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';s.onload=res;s.onerror=res;document.head.append(s)})}
 async function initMap(){
   if(map)return setTimeout(()=>map.invalidateSize(),100);
@@ -100,19 +101,30 @@ function note(t){$('#gi').textContent=t}
 function setPin(lat,lng,z){
   if(!map)return;const LF=window.L;pin={lat:(+lat).toFixed(7),lng:(+lng).toFixed(7)};
   if(!mk){mk=LF.marker([lat,lng],{draggable:true,icon:LF.divIcon({className:'',html:'<div class="pin"><span>Rumah anda</span>📍</div>',iconSize:[0,0]})}).addTo(map);
-    mk.on('dragend',()=>{const p=mk.getLatLng();pin={lat:p.lat.toFixed(7),lng:p.lng.toFixed(7)};manual=true;note('✅ Pin dilaraskan')})}
+    mk.on('dragend',()=>{const p=mk.getLatLng();pin={lat:p.lat.toFixed(7),lng:p.lng.toFixed(7)};manual=true;showPin();note('✅ Pin dilaraskan')})}
   else mk.setLatLng([lat,lng]);
-  map.setView([lat,lng],z||map.getZoom());
+  map.setView([lat,lng],z||map.getZoom());showPin();
 }
-async function nom(q){try{const r=await(await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=my&q='+encodeURIComponent(q))).json();return r[0]}catch(e){return null}}
+const esc=t=>String(t).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+async function nomS(q){try{return await(await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=5&countrycodes=my&viewbox=99.8,6.9,101,5.9&q='+encodeURIComponent(q))).json()}catch(e){return[]}}
 function geo(){
-  clearTimeout(tmr);const q=$('#al').value.trim();if(manual||q.length<8)return;
-  tmr=setTimeout(async()=>{note('🔎 Mencari lokasi mengikut alamat…');let r=await nom(q);
-    if(!r){const p=q.split(',');if(p.length>2)r=await nom(p.slice(1).join(','))}
-    if(manual)return;
-    if(r){setPin(r.lat,r.lon,17);note('📍 Lokasi dijumpai. Jika tidak tepat, seret pin atau ketik pada peta.')}
-    else note('⚠️ Alamat tidak dijumpai. Ketik pada peta atau seret pin ke rumah anda, atau tekan "Guna lokasi semasa saya".')},1000);
+  clearTimeout(tmr);const q=$('#al').value.trim(),sg=$('#sg');
+  if(q.length<4){sg.innerHTML='';return}
+  tmr=setTimeout(async()=>{const id=++sgq;let r=await nomS(q);
+    if(!r.length){const p=q.split(',');if(p.length>2)r=await nomS(p.slice(1).join(','))}
+    if(id!==sgq)return;SG=r;
+    sg.innerHTML=r.map((x,i)=>`<button type="button" onclick="pickS(${i})">📍 ${esc(x.display_name)}</button>`).join('')+`<button type="button" onclick="closeS()" style="color:var(--p);font-weight:600">✍️ ${r.length?'Tiada dalam senarai? ':'Tiada padanan. '}Guna alamat taip sendiri &amp; pilih pada peta</button>`},700);
 }
+function pickS(i){const x=SG[i];$('#al').value=x.display_name.toUpperCase();$('#sg').innerHTML='';setPin(x.lat,x.lon,17);note('📍 Lokasi dipilih daripada senarai. Seret pin atau ketik peta jika tidak tepat.')}
+function closeS(){$('#sg').innerHTML='';note('Ketik pada peta atau seret pin ke rumah anda.');$('#map').scrollIntoView({block:'center',behavior:'smooth'})}
+async function showPin(){
+  const el=$('#pa'),id=++rq;el.classList.remove('hide');
+  el.innerHTML=`<b>Geotag:</b> ${pin.lat}, ${pin.lng}<br><span id="pr">Mencari alamat pin…</span>`;
+  let a=null;try{a=(await(await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&zoom=18&lat=${pin.lat}&lon=${pin.lng}`)).json()).display_name}catch(e){}
+  if(id!==rq)return;lastAddr=a?a.toUpperCase():'';
+  $('#pr').innerHTML=a?`<b>Alamat pin:</b> ${esc(lastAddr)}<br><button type="button" class="l" style="width:auto;padding:6px 0;text-align:left" onclick="useAddr()">Guna alamat ini</button>`:'Alamat tidak tersedia untuk lokasi ini (kawasan luar bandar)';
+}
+function useAddr(){$('#al').value=lastAddr;$('#sg').innerHTML='';toast('Alamat dikemas kini')}
 function useMe(){
   if(!navigator.geolocation)return toast('Peranti tidak menyokong GPS');
   load(true,'Mengesan lokasi…');
