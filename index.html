@@ -68,7 +68,7 @@ function loginView(){
 function signupView(){
   $('#sub').textContent='Pendaftaran pengguna baharu';
   app.innerHTML=`<div class="card"><h2>Daftar pegawai</h2>
-  <label>Nama (HURUF BESAR)</label><input id="sn" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()" autocomplete="name">
+  <label>Nama</label><input id="sn" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()" autocomplete="name">
   <label>No. Kad Pengenalan</label><input id="si" inputmode="numeric" oninput="icFix(this)">
   <label>No. Telefon</label><input id="st" inputmode="tel" value="01" oninput="phoneFix(this)">
   <label>Jawatan</label><select id="sj" data-new="jawatan">${opts(L.jawatan)}</select>
@@ -94,7 +94,7 @@ function form(){
   <label>Alamat (taip jalan/taman untuk cari senarai MPKP atau enter manual)</label><textarea id="al" rows="2" autocomplete="off" oninput="this.value=this.value.toUpperCase();srch()"></textarea><div id="sg"></div><div id="fl" class="ro hide" style="background:#fef3c7;margin-top:8px"></div>
   <label>Lokaliti</label><select id="lok" data-new="lokaliti">${opts(L.lokaliti)}</select>
   <label>Nama penuh penghuni</label><input id="nm" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
-  <label>No. Kad Pengenalan</label><input id="ic" autocapitalize="characters" oninput="icFix(this,1)">
+  <label>No. Kad Pengenalan/Passport</label><input id="ic" autocapitalize="characters" oninput="icFix(this,1)">
   <label>No. Telefon</label><input id="tl" inputmode="tel" value="01" oninput="phoneFix(this)">
   <label>Jumlah isi rumah (nombor sahaja)</label><input id="ir" type="number" inputmode="numeric" min="1"></div>
   <div class="card"><h2>Haiwan peliharaan</h2>
