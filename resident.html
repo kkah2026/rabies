@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ms"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f766e">
+<title>Saringan Gigitan Haiwan - PKD Kubang Pasu</title>
+<style>
+:root{--p:#0f766e;--p2:#14b8a6;--bg:#f1f5f4;--tx:#0f172a;--mu:#64748b;--bd:#dbe4e2;--err:#dc2626}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--tx);padding-bottom:env(safe-area-inset-bottom)}
+header{background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;padding:calc(18px + env(safe-area-inset-top)) 18px 22px}
+header h1{margin:0;font-size:1.1rem}header p{margin:2px 0 0;font-size:.8rem;opacity:.9}
+main{max-width:640px;margin:0 auto;padding:14px}
+.card{background:#fff;border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 2px 10px #0000000d;animation:up .3s ease}
+@keyframes up{from{opacity:0;transform:translateY(8px)}}
+h2{font-size:.95rem;margin:0 0 12px;color:var(--p)}p{font-size:.92rem;line-height:1.6;margin:0 0 12px}
+label{display:block;font-size:.82rem;font-weight:600;margin:12px 0 5px}
+input,select,textarea{width:100%;font:inherit;padding:12px;border:1.5px solid var(--bd);border-radius:12px;background:#fff;color:var(--tx)}
+input:focus,textarea:focus{outline:none;border-color:var(--p2);box-shadow:0 0 0 3px #14b8a633}
+.bad{border-color:var(--err)!important}.hint{font-size:.78rem;color:var(--mu);margin-top:6px;line-height:1.4}
+.seg{display:flex;gap:8px;flex-wrap:wrap}.seg input{display:none}
+.seg span{display:block;padding:10px 14px;border:1.5px solid var(--bd);border-radius:999px;font-size:.85rem;cursor:pointer;user-select:none}
+.seg input:checked+span{background:var(--p);border-color:var(--p);color:#fff}
+button.b{width:100%;padding:14px;border:0;border-radius:12px;background:var(--p);color:#fff;font:600 1rem inherit;margin-top:16px}
+button.l{background:none;border:0;color:var(--p);font:inherit;padding:10px;margin-top:6px;width:100%}
+.hide{display:none!important}img{width:100%;border-radius:12px;display:block}
+#ov{position:fixed;inset:0;background:#0f172acc;backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:#fff;z-index:999}
+#ov.on{display:flex}.sp{width:46px;height:46px;border:4px solid #ffffff44;border-top-color:#fff;border-radius:50%;animation:r .8s linear infinite}@keyframes r{to{transform:rotate(360deg)}}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#0f172a;color:#fff;padding:12px 18px;border-radius:12px;font-size:.88rem;z-index:1000;opacity:0;pointer-events:none;transition:.3s;max-width:90%}#toast.on{opacity:1}
+.sk{border-radius:12px;background:linear-gradient(90deg,#e5ecea 25%,#f3f7f6 50%,#e5ecea 75%);background-size:200% 100%;animation:sh 1.2s infinite}@keyframes sh{to{background-position:-200% 0}}
+#map{height:280px;border-radius:12px;overflow:hidden;z-index:0}.pin{font-size:32px;line-height:1;transform:translate(-50%,-100%)}
+</style></head><body>
+<header><h1>🐕 Saringan Kes Gigitan Haiwan</h1><p>Pejabat Kesihatan Daerah Kubang Pasu</p></header>
+<main>
+<div class="card pg"><h2>Makluman</h2>
+<p>Borang ini disediakan oleh Pejabat Kesihatan Daerah (PKD) Kubang Pasu bagi tujuan Pencarian Kes Gigitan Haiwan berikutan situasi wabak Rabies semasa.</p>
+<p>Sila isi borang ini sekiranya anda, ahli keluarga, atau kenalan terdekat anda yang berada di daerah Kubang Pasu yang pernah mengalami sejarah digigit, dicakar, atau dijilat pada luka / mata / mulut oleh mana-mana haiwan (anjing, kucing, atau haiwan lain) bermula dari 1 Jun 2026 hingga kini.</p>
+<p>Namun, jika anda tidak digigit haiwan dalam tempoh tersebut, anda juga digalakkan jawab supaya kami tahu anda selamat dan tidak berisiko.</p>
+<p><b>Terima kasih atas kerjasama anda.</b></p>
+<button class="b" onclick="show(1)">Seterusnya</button></div>
+
+<div class="card pg hide"><div id="im" class="sk" style="min-height:240px"><img src="https://kkah2026.github.io/rabies/rabies.jpeg" alt="Rabies" onload="this.parentNode.classList.remove('sk')"></div>
+<button class="b" onclick="show(2)">Seterusnya</button><button class="l" onclick="show(0)">Kembali</button></div>
+
+<div class="card pg hide"><h2>Maklumat anda</h2>
+<label>Nama penuh</label><input id="nm" style="text-transform:uppercase" autocomplete="name" oninput="this.value=this.value.toUpperCase()">
+<label>No. Kad Pengenalan / No. Passport / No. MyKid</label><input id="ic" autocapitalize="characters" oninput="this.value=this.value.replace(/[^A-Za-z0-9]/g,'').toUpperCase().slice(0,12)">
+<label>Jantina</label><div class="seg"><label style="margin:0"><input type="radio" name="jt" value="Lelaki"><span>Lelaki</span></label><label style="margin:0"><input type="radio" name="jt" value="Perempuan"><span>Perempuan</span></label></div>
+<label>No. telefon / WhatsApp untuk dihubungi</label><input id="tl" inputmode="tel" value="01" oninput="phoneFix(this)">
+<label>Alamat kediaman semasa</label><textarea id="al" rows="3" autocomplete="off" oninput="this.value=this.value.toUpperCase();geo()"></textarea>
+<label>Pin lokasi rumah anda</label><div id="map" class="sk"></div><div class="hint" id="gi">Taip alamat di atas, pin akan bergerak ke lokasi rumah anda.</div>
+<button class="l" onclick="useMe()">📍 Guna lokasi semasa saya (jika berada di rumah)</button>
+<label>Bilangan isi rumah</label><input id="ir" type="number" inputmode="numeric" min="1">
+<label>Pernah anda atau mana-mana isi rumah mengalami gigitan atau cakaran haiwan antara Jun 2026 hingga September 2026?</label>
+<div class="seg"><label style="margin:0"><input type="radio" name="pn" value="Ya" onchange="lab()"><span>Ya</span></label><label style="margin:0"><input type="radio" name="pn" value="Tidak" onchange="lab()"><span>Tidak</span></label></div>
+<button class="b" id="nx" onclick="nextA()">Seterusnya</button><button class="l" onclick="show(1)">Kembali</button></div>
+
+<div class="card pg hide"><h2>Butiran gigitan / cakaran</h2>
+<label>Nama individu yang mengalami gigitan atau cakaran</label><input id="ng" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+<label>Tarikh kejadian</label><input id="tg" type="date" min="2026-06-01">
+<label>Lokasi kejadian (alamat / lokaliti)</label><input id="lk">
+<label>Status</label><div id="s_st"></div>
+<label>Jumlah gigitan / cakaran</label><input id="jm" type="number" inputmode="numeric" min="1">
+<label>Anggota badan terlibat (boleh pilih lebih dari satu)</label><div id="s_ag"></div>
+<label>Status pemilikan haiwan</label><div id="s_pm"></div>
+<label>Jenis haiwan</label><div id="s_jn"></div>
+<label>Status vaksin rabies haiwan (tahun semasa)</label><div id="s_vh"></div>
+<label>Status semasa haiwan tersebut</label><div id="s_sh"></div>
+<label>Sudah mendapatkan rawatan di klinik / hospital?</label><div id="s_rw"></div>
+<label>Sudah menerima suntikan vaksin Rabies?</label><div id="s_vr"></div>
+<button class="b" onclick="nextB()">Hantar</button><button class="l" onclick="show(2)">Kembali</button></div>
+</main>
+<div id="ov"><div class="sp"></div><div id="ovt">Sila tunggu…</div></div><div id="toast"></div>
+<script>
+const API='https://script.google.com/macros/s/AKfycbzYv6WQtKPESIUKkJwYEDI4eUYhjokDm6duEQfAxmZ_StlNrgJn7o1_zXuy9L3oFrwZmA/exec';
+const $=s=>document.querySelector(s),pgs=[...document.querySelectorAll('.pg')];
+// Pilihan jawapan (boleh ubah di sini)
+const OPT={st:['Gigitan','Cakaran','Jilatan pada luka / mata / mulut'],ag:['Kepala / Muka','Leher','Tangan','Kaki','Badan'],pm:['Haiwan peliharaan sendiri','Haiwan peliharaan jiran / orang lain','Haiwan liar / jalanan'],jn:['Anjing','Kucing','Lain-lain'],vh:['Sudah divaksin','Tidak divaksin','Tidak diketahui'],sh:['Hidup dan sihat','Mati','Hilang','Tidak diketahui'],rw:['Ya','Tidak'],vr:['Ya','Tidak']};
+for(const k in OPT)$('#s_'+k).outerHTML=`<div class="seg" id="s_${k}">${OPT[k].map(v=>`<label style="margin:0"><input type="${k==='ag'?'checkbox':'radio'}" name="${k}" value="${v}"><span>${v}</span></label>`).join('')}</div>`;
+const val=n=>(document.querySelector(`[name=${n}]:checked`)||{}).value||'';
+function load(on,t){$('#ov').classList.toggle('on',on);if(t)$('#ovt').textContent=t}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),3400)}
+function show(n){pgs.forEach((e,i)=>e.classList.toggle('hide',i!==n));scrollTo({top:0});if(n===2)initMap()}
+function phoneFix(el){el.value=el.value.replace(/\D/g,'').slice(0,11);if(el.value&&el.value[0]!=='0')el.value='0'+el.value}
+function need(ids){let ok=true;ids.forEach(i=>{const e=document.getElementById(i),bad=!e.value.trim();e.classList.toggle('bad',bad);if(bad)ok=false});if(!ok)toast('Sila lengkapkan ruangan bertanda merah');return ok}
+function lab(){$('#nx').textContent=val('pn')==='Tidak'?'Hantar':'Seterusnya'}
+// ---- Peta & geotag (berdasarkan alamat rumah) ----
+let map,mk,pin=null,manual=false,tmr;
+function loadLeaflet(){return new Promise(res=>{if(window.L&&window.L.map)return res();const c=document.createElement('link');c.rel='stylesheet';c.href='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';document.head.append(c);const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';s.onload=res;s.onerror=res;document.head.append(s)})}
+async function initMap(){
+  if(map)return setTimeout(()=>map.invalidateSize(),100);
+  await loadLeaflet();const LF=window.L;if(!LF||!LF.map){$('#map').textContent='Peta tidak dapat dimuatkan';return}
+  $('#map').classList.remove('sk');
+  map=LF.map('map').setView([6.4384,100.4197],12);
+  LF.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+  map.on('click',e=>{manual=true;setPin(e.latlng.lat,e.latlng.lng);note('✅ Lokasi dipilih pada peta')});
+}
+function note(t){$('#gi').textContent=t}
+function setPin(lat,lng,z){
+  if(!map)return;const LF=window.L;pin={lat:(+lat).toFixed(7),lng:(+lng).toFixed(7)};
+  if(!mk){mk=LF.marker([lat,lng],{draggable:true,icon:LF.divIcon({className:'',html:'<div class="pin">📍</div>',iconSize:[0,0]})}).addTo(map);
+    mk.on('dragend',()=>{const p=mk.getLatLng();pin={lat:p.lat.toFixed(7),lng:p.lng.toFixed(7)};manual=true;note('✅ Pin dilaraskan')})}
+  else mk.setLatLng([lat,lng]);
+  map.setView([lat,lng],z||map.getZoom());
+}
+async function nom(q){try{const r=await(await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=my&q='+encodeURIComponent(q))).json();return r[0]}catch(e){return null}}
+function geo(){
+  clearTimeout(tmr);const q=$('#al').value.trim();if(manual||q.length<8)return;
+  tmr=setTimeout(async()=>{note('🔎 Mencari lokasi mengikut alamat…');let r=await nom(q);
+    if(!r){const p=q.split(',');if(p.length>2)r=await nom(p.slice(1).join(','))}
+    if(manual)return;
+    if(r){setPin(r.lat,r.lon,17);note('📍 Lokasi dijumpai. Jika tidak tepat, seret pin atau ketik pada peta.')}
+    else note('⚠️ Alamat tidak dijumpai. Ketik pada peta atau seret pin ke rumah anda, atau tekan "Guna lokasi semasa saya".')},1000);
+}
+function useMe(){
+  if(!navigator.geolocation)return toast('Peranti tidak menyokong GPS');
+  load(true,'Mengesan lokasi…');
+  navigator.geolocation.getCurrentPosition(p=>{load(false);manual=true;setPin(p.coords.latitude,p.coords.longitude,18);note('✅ Menggunakan lokasi semasa anda (±'+Math.round(p.coords.accuracy)+' m). Seret pin jika perlu.')},()=>{load(false);toast('Tidak dapat mengesan lokasi. Ketik pada peta untuk memilih.')},{enableHighAccuracy:true,timeout:15000,maximumAge:0});
+}
+// ---- Semak & hantar ----
+function nextA(){
+  if(!need(['nm','ic','tl','al','ir']))return;
+  if(!val('jt'))return toast('Sila pilih jantina');
+  if(!/^(01\d{8,9}|0[3-9]\d{7,8})$/.test($('#tl').value)){$('#tl').classList.add('bad');return toast('No. telefon tidak sah (cth: 0123456789 atau 0471234567)')}
+  if(!pin)return toast('Sila tetapkan pin lokasi rumah pada peta');
+  if(!val('pn'))return toast('Sila jawab soalan gigitan / cakaran');
+  val('pn')==='Tidak'?send():show(3);
+}
+function nextB(){
+  if(!need(['ng','tg','lk','jm']))return;
+  for(const k of ['st','pm','jn','vh','sh','rw','vr'])if(!val(k))return toast('Sila lengkapkan semua soalan');
+  if(!document.querySelector('[name=ag]:checked'))return toast('Sila pilih anggota badan terlibat');
+  send();
+}
+async function send(){
+  const g=val('pn')==='Ya',d={nama:$('#nm').value.trim(),ic:$('#ic').value,jantina:val('jt'),tel:$('#tl').value,alamat:$('#al').value.trim(),isiRumah:$('#ir').value,pernah:val('pn'),lat:pin.lat,lng:pin.lng,gpsMasa:new Date().toLocaleString('en-GB')};
+  if(g)Object.assign(d,{digigit:$('#ng').value.trim(),tarikh:$('#tg').value.split('-').reverse().join('/'),lokasi:$('#lk').value.trim(),status:val('st'),jumlah:$('#jm').value,anggota:[...document.querySelectorAll('[name=ag]:checked')].map(e=>e.value),pemilikan:val('pm'),jenis:val('jn'),vaksinHaiwan:val('vh'),statusHaiwan:val('sh'),rawatan:val('rw'),vaksin:val('vr')});
+  load(true,'Menghantar…');
+  try{const r=await(await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'resident',data:d})})).json();
+    if(r.ok){document.querySelector('main').innerHTML='<div class="card" style="text-align:center"><div style="font-size:3rem">✅</div><h2>Terima kasih!</h2><p>Maklumat anda telah diterima oleh PKD Kubang Pasu.</p><button class="b" onclick="location.reload()">Isi untuk ahli keluarga lain</button></div>';scrollTo({top:0})}
+    else toast(r.error||'Gagal menghantar')}
+  catch(e){toast('Ralat rangkaian. Cuba lagi.')}finally{load(false)}
+}
+</script></body></html>
