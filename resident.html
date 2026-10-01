@@ -28,6 +28,7 @@ button.l{background:none;border:0;color:var(--p);font:inherit;padding:10px;margi
 #toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#0f172a;color:#fff;padding:12px 18px;border-radius:12px;font-size:.88rem;z-index:1000;opacity:0;pointer-events:none;transition:.3s;max-width:90%}#toast.on{opacity:1}
 .sk{border-radius:12px;background:linear-gradient(90deg,#e5ecea 25%,#f3f7f6 50%,#e5ecea 75%);background-size:200% 100%;animation:sh 1.2s infinite}@keyframes sh{to{background-position:-200% 0}}
 #map{height:280px;border-radius:12px;overflow:hidden;z-index:0}.pin{position:relative;font-size:32px;line-height:1;transform:translate(-50%,-100%)}.pin span{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;font:600 11px system-ui;padding:3px 8px;border-radius:8px;white-space:nowrap;margin-bottom:2px}
+.gate{margin-top:32px;padding:18px 16px;background:#f0fdfa;border:2px solid var(--p2);border-radius:16px}.gq{font-size:1.1rem;line-height:1.5;margin-bottom:14px}.gq b{color:var(--p)}.seg.big{flex-wrap:nowrap}.seg.big label{flex:1}.seg.big span{text-align:center;padding:16px 10px;font-size:1.05rem;font-weight:600}
 </style></head><body>
 <header><h1>🐕 Saringan Kes Gigitan Haiwan</h1><p>Pejabat Kesihatan Daerah Kubang Pasu</p></header>
 <main>
@@ -50,8 +51,8 @@ button.l{background:none;border:0;color:var(--p);font:inherit;padding:10px;margi
 <label>Pin lokasi rumah anda</label><div id="map" class="sk"></div><div class="hint" id="gi">Taip alamat di atas, pin akan bergerak ke lokasi rumah anda.</div>
 <button class="l" onclick="useMe()">📍 Guna lokasi semasa saya (jika berada di rumah)</button>
 <label>Bilangan isi rumah</label><input id="ir" type="number" inputmode="numeric" min="1">
-<label>Pernah anda atau mana-mana isi rumah mengalami gigitan atau cakaran haiwan antara Jun 2026 hingga September 2026?</label>
-<div class="seg"><label style="margin:0"><input type="radio" name="pn" value="Ya" onchange="lab()"><span>Ya</span></label><label style="margin:0"><input type="radio" name="pn" value="Tidak" onchange="lab()"><span>Tidak</span></label></div>
+<div class="gate"><div class="gq">Pernah <b>anda</b> atau <b>mana-mana isi rumah</b> mengalami <b>gigitan</b> atau <b>cakaran</b> haiwan antara <b>Jun 2026</b> hingga <b>September 2026</b>?</div>
+<div class="seg big"><label style="margin:0"><input type="radio" name="pn" value="Ya" onchange="lab()"><span>Ya</span></label><label style="margin:0"><input type="radio" name="pn" value="Tidak" onchange="lab()"><span>Tidak</span></label></div></div>
 <button class="b" id="nx" onclick="nextA()">Seterusnya</button><button class="l" onclick="show(1)">Kembali</button></div>
 
 <div class="card pg hide"><h2>Butiran gigitan / cakaran</h2>
