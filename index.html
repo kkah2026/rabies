@@ -88,7 +88,7 @@ function signupView(){
 }
 function form(){
   $('#sub').textContent='Borang ACD';
-  const ynt=n=>seg(n,['Ya','Tidak']);
+  const ynt=n=>seg(n,['YA','TIDAK']);
   app.innerHTML=`<div class="card"><h2>Pegawai pelapor</h2><div class="ro"><b>${me.nama}</b><br>${me.jawatan} · ${me.tel}<br>Tarikh ACD: ${today()}</div><button class="l" id="lo">Bukan anda? Log keluar</button></div>
   <div class="card"><h2>Maklumat penghuni</h2>
   <label>Alamat (taip jalan/taman untuk cari senarai MPKP atau enter manual)</label><textarea id="al" rows="2" autocomplete="off" oninput="this.value=this.value.toUpperCase();srch()"></textarea><div id="sg"></div><div id="fl" class="ro hide" style="background:#fef3c7;margin-top:8px"></div>
@@ -99,7 +99,7 @@ function form(){
   <label>Jumlah isi rumah (nombor sahaja)</label><input id="ir" type="number" inputmode="numeric" min="1"></div>
   <div class="card"><h2>Haiwan peliharaan</h2>
   <label>Ada bela haiwan peliharaan? (jika ya, nyatakan)</label><input id="be">
-  <label>Terima vaksin rabies untuk haiwan peliharaan?</label>${seg('vk',['Ya','Tidak','Tiada haiwan'])}
+  <label>Terima vaksin rabies untuk haiwan peliharaan?</label>${seg('vk',['YA','TIDAK','TIADA HAIWAN'])}
   <label>Pernah melihat bangkai atau haiwan berkelakuan tidak normal (kawasan berdekatan)?</label>${ynt('bk')}
   <label>Pernah digigit haiwan dalam masa 3 bulan sebelum?</label>${ynt('gg')}</div>
   <div class="card hide" id="bite"><h2>Butiran gigitan</h2>
@@ -107,12 +107,12 @@ function form(){
   <label>Nama individu yang digigit</label><input id="ng">
   <label>Tarikh digigit</label><input id="tg" type="date">
   <label>Anggota badan yang digigit</label><input id="ab">
-  <label>Bilangan dos suntikan vaksin PEP</label>${seg('ds',['Tidak menerima suntikan','1','2','3','4'])}
-  <label>Status haiwan</label>${seg('sh',['Vaksin','Tidak divaksin','Tidak diketahui'])}
-  <label>Status PEP</label>${seg('sp2',['Diberi','Tidak diberi','Tidak berkaitan'])}
-  <label>Status luka</label>${seg('sl',['Sembuh','Tidak sembuh','Tidak berkaitan'])}</div>
+  <label>Bilangan dos suntikan vaksin PEP</label>${seg('ds',['TIDAK MENERIMA SUNTIKAN','1','2','3','4'])}
+  <label>Status haiwan</label>${seg('sh',['VAKSIN','TIDAK DIVAKSIN','TIDAK DIKETAHUI'])}
+  <label>Status PEP</label>${seg('sp2',['DIBERI','TIDAK DIBERI','TIDAK BERKAITAN'])}
+  <label>Status luka</label>${seg('sl',['SEMBUH','TIDAK SEMBUH','TIDAK BERKAITAN'])}</div>
   <div class="card"><h2>Pendidikan kesihatan &amp; catatan</h2>
-  <label>Aktiviti pendidikan kesihatan diberikan</label>${seg('ak',['Lisan','Konsultasi individu','Risalah','Dialog','Video','Poster/Fish tail/Banner','Perbincangan kumpulan kecil'],'checkbox')}
+  <label>Aktiviti pendidikan kesihatan diberikan</label>${seg('ak',['LISAN','KONSULTASI INDIVIDU','RISALAH','DIALOG','VIDEO','POSTER/FISH TAIL/BANNER','PERBINCANGAN KUMPULAN KECIL'],'checkbox')}
   <label>Catatan tambahan (jika ada)</label><textarea id="ct" rows="3"></textarea>
   
   <label>Lokasi geotag anda</label><div id="map" class="sk" style="height:220px"></div><div class="hint" id="gi"></div><button class="b" id="sub2">Hantar</button></div>`;
