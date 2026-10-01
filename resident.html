@@ -27,7 +27,7 @@ button.l{background:none;border:0;color:var(--p);font:inherit;padding:10px;margi
 #ov.on{display:flex}.sp{width:46px;height:46px;border:4px solid #ffffff44;border-top-color:#fff;border-radius:50%;animation:r .8s linear infinite}@keyframes r{to{transform:rotate(360deg)}}
 #toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#0f172a;color:#fff;padding:12px 18px;border-radius:12px;font-size:.88rem;z-index:1000;opacity:0;pointer-events:none;transition:.3s;max-width:90%}#toast.on{opacity:1}
 .sk{border-radius:12px;background:linear-gradient(90deg,#e5ecea 25%,#f3f7f6 50%,#e5ecea 75%);background-size:200% 100%;animation:sh 1.2s infinite}@keyframes sh{to{background-position:-200% 0}}
-#map{height:280px;border-radius:12px;overflow:hidden;z-index:0}.pin{font-size:32px;line-height:1;transform:translate(-50%,-100%)}
+#map{height:280px;border-radius:12px;overflow:hidden;z-index:0}.pin{position:relative;font-size:32px;line-height:1;transform:translate(-50%,-100%)}.pin span{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;font:600 11px system-ui;padding:3px 8px;border-radius:8px;white-space:nowrap;margin-bottom:2px}
 </style></head><body>
 <header><h1>🐕 Saringan Kes Gigitan Haiwan</h1><p>Pejabat Kesihatan Daerah Kubang Pasu</p></header>
 <main>
@@ -59,10 +59,10 @@ button.l{background:none;border:0;color:var(--p);font:inherit;padding:10px;margi
 <label>Tarikh kejadian</label><input id="tg" type="date" min="2026-06-01">
 <label>Lokasi kejadian (alamat / lokaliti)</label><input id="lk">
 <label>Status</label><div id="s_st"></div>
-<label>Jumlah gigitan / cakaran</label><input id="jm" type="number" inputmode="numeric" min="1">
+<label>Jumlah gigitan / cakaran</label><div id="s_jm"></div>
 <label>Anggota badan terlibat (boleh pilih lebih dari satu)</label><div id="s_ag"></div>
 <label>Status pemilikan haiwan</label><div id="s_pm"></div>
-<label>Jenis haiwan</label><div id="s_jn"></div>
+<label>Jenis haiwan</label><div id="s_jn"></div><input id="jl" class="hide" placeholder="Nyatakan jenis haiwan" style="margin-top:8px;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
 <label>Status vaksin rabies haiwan (tahun semasa)</label><div id="s_vh"></div>
 <label>Status semasa haiwan tersebut</label><div id="s_sh"></div>
 <label>Sudah mendapatkan rawatan di klinik / hospital?</label><div id="s_rw"></div>
@@ -74,11 +74,12 @@ button.l{background:none;border:0;color:var(--p);font:inherit;padding:10px;margi
 const API='https://script.google.com/macros/s/AKfycbzYv6WQtKPESIUKkJwYEDI4eUYhjokDm6duEQfAxmZ_StlNrgJn7o1_zXuy9L3oFrwZmA/exec';
 const $=s=>document.querySelector(s),pgs=[...document.querySelectorAll('.pg')];
 // Pilihan jawapan (boleh ubah di sini)
-const OPT={st:['Gigitan','Cakaran','Jilatan pada luka / mata / mulut'],ag:['Kepala / Muka','Leher','Tangan','Kaki','Badan'],pm:['Haiwan peliharaan sendiri','Haiwan peliharaan jiran / orang lain','Haiwan liar / jalanan'],jn:['Anjing','Kucing','Lain-lain'],vh:['Sudah divaksin','Tidak divaksin','Tidak diketahui'],sh:['Hidup dan sihat','Mati','Hilang','Tidak diketahui'],rw:['Ya','Tidak'],vr:['Ya','Tidak']};
+const OPT={st:['Luka berdarah','Cakaran / luka cetek tanpa darah','Jilatan pada luka','Jilatan pada mata / mulut','Jilatan pada kulit'],jm:['1 gigitan','Lebih dari 1 gigitan'],ag:['Muka / leher','Tangan','Kaki','Badan'],pm:['Haiwan liar','Haiwan peliharaan ( Terikat dalam kawasan )','Peliharaan yang dibiarkan bebas keluar'],jn:['Anjing','Kucing','Lain-lain'],vh:['Sudah divaksin','Tidak divaksin','Tidak diketahui'],sh:['Hidup dan sihat','Mati dalam tempoh 14 hari selepas menggigit','Hilang','Tidak diketahui','Hilang / Tidak dapat dikesan / Mati dibunuh / Ditembak'],rw:['Ya','Tidak'],vr:['Ya, terima 1 dos vaksin','Ya, terima 2 dos vaksin','Ya, terima 3 dos vaksin','Ya, terima 4 dos vaksin ( Lengkap )','Belum menerima vaksin']};
 for(const k in OPT)$('#s_'+k).outerHTML=`<div class="seg" id="s_${k}">${OPT[k].map(v=>`<label style="margin:0"><input type="${k==='ag'?'checkbox':'radio'}" name="${k}" value="${v}"><span>${v}</span></label>`).join('')}</div>`;
 const val=n=>(document.querySelector(`[name=${n}]:checked`)||{}).value||'';
 function load(on,t){$('#ov').classList.toggle('on',on);if(t)$('#ovt').textContent=t}
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),3400)}
+document.addEventListener('change',e=>{if(e.target.name==='jn')$('#jl').classList.toggle('hide',e.target.value!=='Lain-lain')});
 function show(n){pgs.forEach((e,i)=>e.classList.toggle('hide',i!==n));scrollTo({top:0});if(n===2)initMap()}
 function phoneFix(el){el.value=el.value.replace(/\D/g,'').slice(0,11);if(el.value&&el.value[0]!=='0')el.value='0'+el.value}
 function need(ids){let ok=true;ids.forEach(i=>{const e=document.getElementById(i),bad=!e.value.trim();e.classList.toggle('bad',bad);if(bad)ok=false});if(!ok)toast('Sila lengkapkan ruangan bertanda merah');return ok}
@@ -97,7 +98,7 @@ async function initMap(){
 function note(t){$('#gi').textContent=t}
 function setPin(lat,lng,z){
   if(!map)return;const LF=window.L;pin={lat:(+lat).toFixed(7),lng:(+lng).toFixed(7)};
-  if(!mk){mk=LF.marker([lat,lng],{draggable:true,icon:LF.divIcon({className:'',html:'<div class="pin">📍</div>',iconSize:[0,0]})}).addTo(map);
+  if(!mk){mk=LF.marker([lat,lng],{draggable:true,icon:LF.divIcon({className:'',html:'<div class="pin"><span>Rumah anda</span>📍</div>',iconSize:[0,0]})}).addTo(map);
     mk.on('dragend',()=>{const p=mk.getLatLng();pin={lat:p.lat.toFixed(7),lng:p.lng.toFixed(7)};manual=true;note('✅ Pin dilaraskan')})}
   else mk.setLatLng([lat,lng]);
   map.setView([lat,lng],z||map.getZoom());
@@ -126,14 +127,15 @@ function nextA(){
   val('pn')==='Tidak'?send():show(3);
 }
 function nextB(){
-  if(!need(['ng','tg','lk','jm']))return;
-  for(const k of ['st','pm','jn','vh','sh','rw','vr'])if(!val(k))return toast('Sila lengkapkan semua soalan');
+  if(!need(['ng','tg','lk']))return;
+  for(const k of ['st','jm','pm','jn','vh','sh','rw','vr'])if(!val(k))return toast('Sila lengkapkan semua soalan');
+  if(val('jn')==='Lain-lain'&&!$('#jl').value.trim()){$('#jl').classList.add('bad');return toast('Sila nyatakan jenis haiwan')}
   if(!document.querySelector('[name=ag]:checked'))return toast('Sila pilih anggota badan terlibat');
   send();
 }
 async function send(){
   const g=val('pn')==='Ya',d={nama:$('#nm').value.trim(),ic:$('#ic').value,jantina:val('jt'),tel:$('#tl').value,alamat:$('#al').value.trim(),isiRumah:$('#ir').value,pernah:val('pn'),lat:pin.lat,lng:pin.lng,gpsMasa:new Date().toLocaleString('en-GB')};
-  if(g)Object.assign(d,{digigit:$('#ng').value.trim(),tarikh:$('#tg').value.split('-').reverse().join('/'),lokasi:$('#lk').value.trim(),status:val('st'),jumlah:$('#jm').value,anggota:[...document.querySelectorAll('[name=ag]:checked')].map(e=>e.value),pemilikan:val('pm'),jenis:val('jn'),vaksinHaiwan:val('vh'),statusHaiwan:val('sh'),rawatan:val('rw'),vaksin:val('vr')});
+  if(g)Object.assign(d,{digigit:$('#ng').value.trim(),tarikh:$('#tg').value.split('-').reverse().join('/'),lokasi:$('#lk').value.trim(),status:val('st'),jumlah:val('jm'),anggota:[...document.querySelectorAll('[name=ag]:checked')].map(e=>e.value),pemilikan:val('pm'),jenis:val('jn')==='Lain-lain'?'Lain-lain: '+$('#jl').value.trim().toUpperCase():val('jn'),vaksinHaiwan:val('vh'),statusHaiwan:val('sh'),rawatan:val('rw'),vaksin:val('vr')});
   load(true,'Menghantar…');
   try{const r=await(await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'resident',data:d})})).json();
     if(r.ok){document.querySelector('main').innerHTML='<div class="card" style="text-align:center"><div style="font-size:3rem">✅</div><h2>Terima kasih!</h2><p>Maklumat anda telah diterima oleh PKD Kubang Pasu.</p><button class="b" onclick="location.reload()">Isi untuk ahli keluarga lain</button></div>';scrollTo({top:0})}
