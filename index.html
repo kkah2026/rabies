@@ -121,8 +121,12 @@ function form(){
   document.querySelectorAll('[name=gg]').forEach(r=>r.onchange=()=>$('#bite').classList.toggle('hide',val('gg')!=='Ya'));
   $('#sub2').onclick=submit;
 }
-async function submit(){
-  if(!need(['lok','nm','ic','tl','al','ir']))return;if($('#ic').value.length!==12){$('#ic').classList.add('bad');return toast('IC mesti 12 digit')}
+  async function submit(){
+  if(!need(['lok','nm','ic','tl','al','ir']))return;
+  const ic = $('#ic').value.trim();
+  if(!/^[A-Za-z0-9]{1,12}$/.test(ic)){
+    $('#ic').classList.add('bad');
+    return toast('No. Kad Pengenalan/Passport tidak sah');}$('#ic').classList.remove('bad');
   if(!val('vk')||!val('bk')||!val('gg'))return toast('Sila jawab semua soalan Ya/Tidak');
   const g=val('gg')==='Ya';
   if(g&&(!val('jn')||!val('ds')||!val('sh')||!val('sp2')||!val('sl')||!$('#ng').value||!$('#tg').value||!$('#ab').value))return toast('Lengkapkan butiran gigitan');
