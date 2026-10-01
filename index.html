@@ -42,14 +42,23 @@ let L={jawatan:[],tempat:[],pkd:[],lokaliti:[]},me=JSON.parse(localStorage.getIt
 const today=()=>{const d=new Date();return[String(d.getDate()).padStart(2,'0'),String(d.getMonth()+1).padStart(2,'0'),d.getFullYear()].join('/')};
 const load=(on,t)=>{$('#ov').classList.toggle('on',on);if(t)$('#ovt').textContent=t};
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),3200)}
-async function call(body,msg){load(true,msg);try{const r=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(body)});return await r.json()}catch(e){toast('Ralat rangkaian. Cuba lagi.');return{ok:false}}finally{load(false)}}
-const opts=(a,ph)=>`<option value="">${ph||'-- Pilih --'}</option>`+a.map(v=>`<option>${v}</option>`).join('')+'<option value="__new">➕ Tambah baharu…</option>';
-const seg=(n,a,t='radio')=>`<div class="seg">${a.map(v=>`<label style="margin:0"><input type="${t}" name="${n}" value="${v}"><span>${v}</span></label>`).join('')}</div>`;
+async function call(body,msg,tries=1){load(true,msg);
+  try{for(let i=0;i<tries;i++){
+    try{const j=await(await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(body)})).json();if(j.busy&&i<tries-1){await new Promise(z=>setTimeout(z,1500*(i+1)+Math.random()*2000));continue}return j}
+    catch(e){if(i<tries-1)await new Promise(z=>setTimeout(z,1500*(i+1)+Math.random()*2000))}}
+    toast('Ralat rangkaian. Cuba lagi.');return{ok:false}}finally{load(false)}}
+const opts=(a,ph)=>`<option value="">${ph||'-- PILIH --'}</option>`+a.map(v=>String(v).toUpperCase()).map(v=>`<option>${v}</option>`).join('')+'<option value="__new">➕ TAMBAH BAHARU…</option>';
+const seg=(n,a,t='radio')=>`<div class="seg">${a.map(v=>String(v).toUpperCase()).map(v=>`<label style="margin:0"><input type="${t}" name="${n}" value="${v}"><span>${v}</span></label>`).join('')}</div>`;
 const val=n=>(document.querySelector(`[name=${n}]:checked`)||{}).value||'';
 function bindNew(){document.querySelectorAll('select[data-new]').forEach(s=>s.onchange=()=>{if(s.value==='__new'){const v=(prompt('Masukkan nama baharu:')||'').trim().toUpperCase();if(v){if(!L[s.dataset.new].includes(v))L[s.dataset.new].push(v);s.insertAdjacentHTML('afterbegin',`<option>${v}</option>`);s.value=v}else s.value=''}})}
 function phoneFix(el){el.value=el.value.replace(/\D/g,'').slice(0,11);if(el.value&&el.value[0]!=='0')el.value='0'+el.value}
 function icFix(el,alpha){const was=+el.dataset.l||0;el.value=alpha?el.value.replace(/[^A-Za-z0-9]/g,'').toUpperCase().slice(0,12):el.value.replace(/\D/g,'').slice(0,12);el.dataset.l=el.value.length;if(el.value.length===12&&was<12)advance(el)}
-function getGPS(){return new Promise(r=>navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>r({lat:p.coords.latitude.toFixed(7),lng:p.coords.longitude.toFixed(7),t:new Date().toLocaleString('en-GB'),acc:Math.round(p.coords.accuracy),ts:Date.now()}),()=>r(null),{enableHighAccuracy:true,maximumAge:0,timeout:15000}):r(null))}
+let gpsErr=0;
+function getGPS(){return new Promise(r=>{
+  if(!navigator.geolocation){gpsErr=2;return r(null)}
+  const ok=p=>r({lat:p.coords.latitude.toFixed(7),lng:p.coords.longitude.toFixed(7),t:new Date().toLocaleString('en-GB'),acc:Math.round(p.coords.accuracy),ts:Date.now()});
+  navigator.geolocation.getCurrentPosition(ok,e=>{gpsErr=e.code;if(e.code===1)return r(null);
+    navigator.geolocation.getCurrentPosition(ok,e2=>{gpsErr=e2.code;r(null)},{enableHighAccuracy:false,maximumAge:60000,timeout:15000})},{enableHighAccuracy:true,maximumAge:0,timeout:15000})})}
 function need(ids){let ok=true;ids.forEach(i=>{const e=document.getElementById(i);const bad=!e.value.trim();e.classList.toggle('bad',bad);if(bad)ok=false});if(!ok)toast('Sila lengkapkan ruangan bertanda merah');return ok}
 
 async function init(){
@@ -88,7 +97,7 @@ function signupView(){
 }
 function form(){
   $('#sub').textContent='Borang ACD';
-  const ynt=n=>seg(n,['YA','TIDAK']);
+  const ynt=n=>seg(n,['Ya','Tidak']);
   app.innerHTML=`<div class="card"><h2>Pegawai pelapor</h2><div class="ro"><b>${me.nama}</b><br>${me.jawatan} · ${me.tel}<br>Tarikh ACD: ${today()}</div><button class="l" id="lo">Bukan anda? Log keluar</button></div>
   <div class="card"><h2>Maklumat penghuni</h2>
   <label>Alamat (taip jalan/taman untuk cari senarai MPKP atau enter manual)</label><textarea id="al" rows="2" autocomplete="off" oninput="this.value=this.value.toUpperCase();srch()"></textarea><div id="sg"></div><div id="fl" class="ro hide" style="background:#fef3c7;margin-top:8px"></div>
@@ -99,7 +108,7 @@ function form(){
   <label>Jumlah isi rumah (nombor sahaja)</label><input id="ir" type="number" inputmode="numeric" min="1"></div>
   <div class="card"><h2>Haiwan peliharaan</h2>
   <label>Ada bela haiwan peliharaan? (jika ya, nyatakan)</label><input id="be">
-  <label>Terima vaksin rabies untuk haiwan peliharaan?</label>${seg('vk',['YA','TIDAK','TIADA HAIWAN'])}
+  <label>Terima vaksin rabies untuk haiwan peliharaan?</label>${seg('vk',['Ya','Tidak','Tiada haiwan'])}
   <label>Pernah melihat bangkai atau haiwan berkelakuan tidak normal (kawasan berdekatan)?</label>${ynt('bk')}
   <label>Pernah digigit haiwan dalam masa 3 bulan sebelum?</label>${ynt('gg')}</div>
   <div class="card hide" id="bite"><h2>Butiran gigitan</h2>
@@ -107,29 +116,29 @@ function form(){
   <label>Nama individu yang digigit</label><input id="ng">
   <label>Tarikh digigit</label><input id="tg" type="date">
   <label>Anggota badan yang digigit</label><input id="ab">
-  <label>Bilangan dos suntikan vaksin PEP</label>${seg('ds',['TIDAK MENERIMA SUNTIKAN','1','2','3','4'])}
-  <label>Status haiwan</label>${seg('sh',['VAKSIN','TIDAK DIVAKSIN','TIDAK DIKETAHUI'])}
-  <label>Status PEP</label>${seg('sp2',['DIBERI','TIDAK DIBERI','TIDAK BERKAITAN'])}
-  <label>Status luka</label>${seg('sl',['SEMBUH','TIDAK SEMBUH','TIDAK BERKAITAN'])}</div>
+  <label>Bilangan dos suntikan vaksin PEP</label>${seg('ds',['Tidak menerima suntikan','1','2','3','4'])}
+  <label>Status haiwan</label>${seg('sh',['Vaksin','Tidak divaksin','Tidak diketahui'])}
+  <label>Status PEP</label>${seg('sp2',['Diberi','Tidak diberi','Tidak berkaitan'])}
+  <label>Status luka</label>${seg('sl',['Sembuh','Tidak sembuh','Tidak berkaitan'])}</div>
   <div class="card"><h2>Pendidikan kesihatan &amp; catatan</h2>
-  <label>Aktiviti pendidikan kesihatan diberikan</label>${seg('ak',['LISAN','KONSULTASI INDIVIDU','RISALAH','DIALOG','VIDEO','POSTER/FISH TAIL/BANNER','PERBINCANGAN KUMPULAN KECIL'],'checkbox')}
+  <label>Aktiviti pendidikan kesihatan diberikan</label>${seg('ak',['Lisan','Konsultasi individu','Risalah','Dialog','Video','Poster/Fish tail/Banner','Perbincangan kumpulan kecil'],'checkbox')}
   <label>Catatan tambahan (jika ada)</label><textarea id="ct" rows="3"></textarea>
   
   <label>Lokasi geotag anda</label><div id="map" class="sk" style="height:220px"></div><div class="hint" id="gi"></div><button class="b" id="sub2">Hantar</button></div>`;
   bindNew();
   $('#lo').onclick=()=>{if(wid!=null){navigator.geolocation.clearWatch(wid);wid=null}localStorage.removeItem('acd_user');me=null;loginView()};
-  document.querySelectorAll('[name=gg]').forEach(r=>r.onchange=()=>$('#bite').classList.toggle('hide',val('gg')!=='Ya'));
+  document.querySelectorAll('[name=gg]').forEach(r=>r.onchange=()=>$('#bite').classList.toggle('hide',val('gg')!=='YA'));
   $('#sub2').onclick=submit;mountMap();
 }
 async function submit(){
   if(!need(['lok','nm','ic','tl','al','ir']))return;const ic=$('#ic').value.trim();if(!/^[A-Za-z0-9]{1,12}$/.test(ic)){$('#ic').classList.add('bad');return toast('No. Kad Pengenalan/Passport tidak sah')}$('#ic').classList.remove('bad');if(!/^(01\d{8,9}|0[3-9]\d{7,8})$/.test($('#tl').value)){$('#tl').classList.add('bad');return toast('No. telefon tidak sah (cth: 0123456789 atau 0471234567)')}$('#tl').classList.remove('bad');
   if(!val('vk')||!val('bk')||!val('gg'))return toast('Sila jawab semua soalan Ya/Tidak');
-  const g=val('gg')==='Ya';
+  const g=val('gg')==='YA';
   if(g&&(!val('jn')||!val('ds')||!val('sh')||!val('sp2')||!val('sl')||!$('#ng').value||!$('#tg').value||!$('#ab').value))return toast('Lengkapkan butiran gigitan');
   load(true,'Merekod lokasi GPS…');let p=await getGPS();if(!p&&pos&&Date.now()-pos.ts<30000)p=pos;if(!p){load(false);return toast('Lokasi tidak dapat dikesan. Hidupkan GPS dan benarkan lokasi.')}
-  const d={tarikh:today(),pegawai:me.nama,jawatan:me.jawatan,telPegawai:me.tel,lokaliti:$('#lok').value,nama:$('#nm').value.trim(),ic:$('#ic').value,tel:$('#tl').value,alamat:$('#al').value.trim().toUpperCase(),isiRumah:$('#ir').value,bela:$('#be').value.trim()||'Tidak',vaksin:val('vk'),bangkai:val('bk'),gigit:val('gg'),catatan:$('#ct').value.trim(),aktiviti:[...document.querySelectorAll('[name=ak]:checked')].map(e=>e.value),lat:p&&p.lat,lng:p&&p.lng,gpsMasa:p&&p.t};
+  const d={tarikh:today(),pegawai:me.nama,jawatan:me.jawatan,telPegawai:me.tel,lokaliti:$('#lok').value,nama:$('#nm').value.trim(),ic:$('#ic').value,tel:$('#tl').value,alamat:$('#al').value.trim().toUpperCase(),isiRumah:$('#ir').value,bela:$('#be').value.trim()||'TIDAK',vaksin:val('vk'),bangkai:val('bk'),gigit:val('gg'),catatan:$('#ct').value.trim(),aktiviti:[...document.querySelectorAll('[name=ak]:checked')].map(e=>e.value),lat:p&&p.lat,lng:p&&p.lng,gpsMasa:p&&p.t};
   if(g){const t=$('#tg').value.split('-');Object.assign(d,{jenis:val('jn'),digigit:$('#ng').value.trim(),tarikhGigit:t.reverse().join('/'),anggota:$('#ab').value.trim(),dos:val('ds'),statusHaiwan:val('sh'),statusPep:val('sp2'),statusLuka:val('sl')})}
-  const r=await call({action:'submit',data:d},'Menghantar…');
+  sid=sid||(Date.now().toString(36)+Math.random().toString(36).slice(2,8));const r=await call({action:'submit',id:sid,data:d},'Menghantar…',4);if(r.ok)sid=null;
   if(r.ok){const i=A.findIndex(x=>x[0]===d.alamat),row=[d.alamat,d.nama,d.ic,d.tel,d.lokaliti,d.tarikh,me.nama];if(i>=0)A[i]=row;else A.push(row);setA(A);try{localStorage.setItem('acd_addr',JSON.stringify(A))}catch(e){}lastLok=d.lokaliti;toast('✅ Berjaya dihantar'+(p?'':' (tanpa GPS)'));window.scrollTo({top:0,behavior:'smooth'});form();$('#lok').value=lastLok}else toast(r.error||'Gagal hantar')
 }
 let A=[],K=[],M=[],lastLok='';
@@ -147,7 +156,7 @@ function srch(){
 function manual(){$('#sg').innerHTML='';$('#lok').focus()}
 function pick(i){
   const r=A[i];$('#sg').innerHTML='';$('#al').value=r[0];$('#nm').value=r[1]||'';$('#ic').value=r[2]||'';$('#tl').value=r[3]||'01';
-  if(r[4]){if(!L.lokaliti.includes(r[4])){L.lokaliti.push(r[4]);$('#lok').insertAdjacentHTML('afterbegin',`<option>${r[4]}</option>`)}$('#lok').value=r[4]}
+  if(r[4]){const lk=r[4].toUpperCase();if(![...$('#lok').options].some(o=>o.value===lk)){L.lokaliti.push(lk);$('#lok').insertAdjacentHTML('afterbegin',`<option>${lk}</option>`)}$('#lok').value=lk}
   const f=$('#fl');if(r[5]){f.innerHTML=`⚠️ Alamat ini telah diisi pada <b>${r[5]}</b> oleh <b>${r[6]}</b>`;f.classList.remove('hide')}else f.classList.add('hide');
   const n=['lok','nm','ic','tl','ir'].map(x=>$('#'+x)).find(e=>!e.value||e.value==='01');(n||$('#ir')).focus({preventScroll:true});
 }
@@ -158,17 +167,21 @@ function advance(el){
 }
 app.addEventListener('change',e=>{const t=e.target;if(t.type==='radio'||(t.tagName==='SELECT'&&t.value&&t.value!=='__new'))setTimeout(()=>advance(t),120)});
 app.addEventListener('keydown',e=>{if(e.key==='Enter'&&!['TEXTAREA','BUTTON'].includes(e.target.tagName)){e.preventDefault();advance(e.target)}});
-let pos=null,wid=null,map=null,mk=null,ci=null;
+let sid=null,pos=null,wid=null,map=null,mk=null,ci=null;
 async function enter(){load(true,'Mengesan lokasi GPS…');const p=await getGPS();load(false);if(!p)return gateView();pos=p;startWatch();form()}
 function gateView(){
+  const ua=navigator.userAgent,ios=/iP(hone|ad|od)/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1),saf=ios&&!/CriOS|FxiOS|EdgiOS/.test(ua);
+  const why=gpsErr===1?'Kebenaran lokasi ditolak.':'GPS tidak dapat dikesan.';
+  const how=saf?`<li>Buka <b>Settings</b> &gt; <b>Privacy &amp; Security</b> &gt; <b>Location Services</b> dan hidupkan.</li><li>Dalam senarai yang sama, pilih <b>Safari Websites</b> &gt; <b>While Using the App</b>.</li><li>Dalam Safari, ketik <b>aA</b> &gt; <b>Website Settings</b> &gt; <b>Location</b> &gt; <b>Allow</b>.</li>`:ios?`<li>Buka <b>Settings</b> &gt; <b>Privacy &amp; Security</b> &gt; <b>Location Services</b> dan hidupkan.</li><li>Pilih aplikasi pelayar anda dan tetapkan <b>While Using the App</b>.</li>`:`<li>Hidupkan <b>Lokasi / GPS</b> pada telefon.</li><li>Ketik ikon di sebelah alamat laman &gt; <b>Kebenaran</b> &gt; <b>Lokasi</b> &gt; <b>Benarkan</b>.</li>`;
   $('#sub').textContent='Lokasi diperlukan';
-  app.innerHTML=`<div class="card" style="text-align:center"><div style="font-size:2.6rem">📍</div><h2>Kebenaran lokasi diperlukan</h2><p style="font-size:.88rem;line-height:1.5">Borang tidak boleh digunakan tanpa lokasi GPS. Hidupkan GPS dan benarkan akses lokasi untuk laman ini, kemudian tekan Cuba lagi.</p><button class="b" id="rt">Cuba lagi</button></div>`;
+  app.innerHTML=`<div class="card"><div style="font-size:2.6rem;text-align:center">📍</div><h2 style="text-align:center">${why}</h2><p style="font-size:.88rem;line-height:1.5">Borang tidak boleh digunakan tanpa lokasi GPS. Sila:</p><ol style="font-size:.88rem;line-height:1.7;padding-left:20px">${how}<li>Kembali ke sini dan tekan <b>Cuba lagi</b>.</li></ol><button class="b" id="rt">Cuba lagi</button></div>`;
   $('#rt').onclick=enter;
+  if(navigator.permissions)navigator.permissions.query({name:'geolocation'}).then(st=>{st.onchange=()=>{if(st.state==='granted')enter()}}).catch(()=>{});
 }
 function startWatch(){
   if(wid!=null||!navigator.geolocation)return;
   wid=navigator.geolocation.watchPosition(p=>{pos={lat:p.coords.latitude.toFixed(7),lng:p.coords.longitude.toFixed(7),acc:Math.round(p.coords.accuracy),t:new Date().toLocaleString('en-GB'),ts:Date.now()};updMap()},
-    ()=>{const g=$('#gi');if(g)g.textContent='⚠️ Lokasi tidak dapat dikesan. Hidupkan GPS.'},{enableHighAccuracy:true,maximumAge:5000,timeout:30000});
+    ()=>{const g=$('#gi');if(g)g.textContent='⚠️ Lokasi tidak dapat dikesan. buka GPS. Untuk safari(iPhone :  click "3 dots" - Share- View More - Add to home Screen- Add'},{enableHighAccuracy:true,maximumAge:5000,timeout:30000});
 }
 function loadLeaflet(){return new Promise(res=>{if(window.L&&window.L.map)return res();
   const c=document.createElement('link');c.rel='stylesheet';c.href='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';document.head.append(c);
