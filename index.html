@@ -47,7 +47,7 @@ const opts=(a,ph)=>`<option value="">${ph||'-- Pilih --'}</option>`+a.map(v=>`<o
 const seg=(n,a,t='radio')=>`<div class="seg">${a.map(v=>`<label style="margin:0"><input type="${t}" name="${n}" value="${v}"><span>${v}</span></label>`).join('')}</div>`;
 const val=n=>(document.querySelector(`[name=${n}]:checked`)||{}).value||'';
 function bindNew(){document.querySelectorAll('select[data-new]').forEach(s=>s.onchange=()=>{if(s.value==='__new'){const v=(prompt('Masukkan nama baharu:')||'').trim().toUpperCase();if(v){if(!L[s.dataset.new].includes(v))L[s.dataset.new].push(v);s.insertAdjacentHTML('afterbegin',`<option>${v}</option>`);s.value=v}else s.value=''}})}
-function phoneFix(el){el.value=el.value.replace(/\D/g,'');if(!el.value.startsWith('01'))el.value='01'+el.value.replace(/^0?1?/,'')}
+function phoneFix(el){el.value=el.value.replace(/\D/g,'').slice(0,11);if(el.value&&el.value[0]!=='0')el.value='0'+el.value}
 function icFix(el,alpha){const was=+el.dataset.l||0;el.value=alpha?el.value.replace(/[^A-Za-z0-9]/g,'').toUpperCase().slice(0,12):el.value.replace(/\D/g,'').slice(0,12);el.dataset.l=el.value.length;if(el.value.length===12&&was<12)advance(el)}
 function getGPS(){return new Promise(r=>navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>r({lat:p.coords.latitude.toFixed(7),lng:p.coords.longitude.toFixed(7),t:new Date().toLocaleString('en-GB'),acc:Math.round(p.coords.accuracy),ts:Date.now()}),()=>r(null),{enableHighAccuracy:true,maximumAge:0,timeout:15000}):r(null))}
 function need(ids){let ok=true;ids.forEach(i=>{const e=document.getElementById(i);const bad=!e.value.trim();e.classList.toggle('bad',bad);if(bad)ok=false});if(!ok)toast('Sila lengkapkan ruangan bertanda merah');return ok}
@@ -78,7 +78,7 @@ function signupView(){
   <button class="b" id="ss">Daftar &amp; Mula</button><button class="l" id="bb">Kembali</button></div>`;
   bindNew();$('#bb').onclick=loginView;
   $('#ss').onclick=async()=>{if(!need(['sn','si','st','sj','sp','sk']))return;
-    if($('#si').value.length!==12){$('#si').classList.add('bad');return toast('IC mesti 12 digit')}
+    if($('#si').value.length!==12){$('#si').classList.add('bad');return toast('IC mesti 12 digit')}if(!/^(01\d{8,9}|0[3-9]\d{7,8})$/.test($('#st').value)){$('#st').classList.add('bad');return toast('No. telefon tidak sah (cth: 0123456789 atau 0471234567)')}$('#st').classList.remove('bad');
     load(true,'Meminta kebenaran lokasi & kamera…');
     gps=await getGPS();if(!gps){load(false);return toast('Kebenaran lokasi diperlukan untuk mendaftar')}
     try{const s=await navigator.mediaDevices.getUserMedia({video:true});s.getTracks().forEach(t=>t.stop())}catch(e){}
@@ -91,7 +91,7 @@ function form(){
   const ynt=n=>seg(n,['Ya','Tidak']);
   app.innerHTML=`<div class="card"><h2>Pegawai pelapor</h2><div class="ro"><b>${me.nama}</b><br>${me.jawatan} · ${me.tel}<br>Tarikh ACD: ${today()}</div><button class="l" id="lo">Bukan anda? Log keluar</button></div>
   <div class="card"><h2>Maklumat penghuni</h2>
-  <label>Alamat (taip jalan/taman cari senarai MPKP atau enter manual)</label><textarea id="al" rows="2" autocomplete="off" oninput="this.value=this.value.toUpperCase();srch()"></textarea><div id="sg"></div><div id="fl" class="ro hide" style="background:#fef3c7;margin-top:8px"></div>
+  <label>Alamat (taip jalan/taman untuk cari senarai MPKP atau enter manual)</label><textarea id="al" rows="2" autocomplete="off" oninput="this.value=this.value.toUpperCase();srch()"></textarea><div id="sg"></div><div id="fl" class="ro hide" style="background:#fef3c7;margin-top:8px"></div>
   <label>Lokaliti</label><select id="lok" data-new="lokaliti">${opts(L.lokaliti)}</select>
   <label>Nama penuh penghuni</label><input id="nm" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
   <label>No. Kad Pengenalan/Passport</label><input id="ic" autocapitalize="characters" oninput="icFix(this,1)">
@@ -122,7 +122,7 @@ function form(){
   $('#sub2').onclick=submit;mountMap();
 }
 async function submit(){
-  if(!need(['lok','nm','ic','tl','al','ir']))return;const ic=$('#ic').value.trim();if(!/^[A-Za-z0-9]{1,12}$/.test(ic)){$('#ic').classList.add('bad');return toast('No. Kad Pengenalan/Passport tidak sah')}$('#ic').classList.remove('bad');
+  if(!need(['lok','nm','ic','tl','al','ir']))return;const ic=$('#ic').value.trim();if(!/^[A-Za-z0-9]{1,12}$/.test(ic)){$('#ic').classList.add('bad');return toast('No. Kad Pengenalan/Passport tidak sah')}$('#ic').classList.remove('bad');if(!/^(01\d{8,9}|0[3-9]\d{7,8})$/.test($('#tl').value)){$('#tl').classList.add('bad');return toast('No. telefon tidak sah (cth: 0123456789 atau 0471234567)')}$('#tl').classList.remove('bad');
   if(!val('vk')||!val('bk')||!val('gg'))return toast('Sila jawab semua soalan Ya/Tidak');
   const g=val('gg')==='Ya';
   if(g&&(!val('jn')||!val('ds')||!val('sh')||!val('sp2')||!val('sl')||!$('#ng').value||!$('#tg').value||!$('#ab').value))return toast('Lengkapkan butiran gigitan');
